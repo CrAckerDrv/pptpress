@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en" data-size="16:9">
+<head>
+<meta charset="utf-8">
+<title>Editorial keynote</title>
+<style>
+  :root{
+    --paper:#F6F4EF; --ink:#141414; --muted:#6F6A62; --accent:#C2410C;
+    --rule:#D9D3C7; --soft:#EAE5DA;
+  }
+  .slide{
+    font-family:'Georgia','Songti SC','SimSun',serif;
+    background:var(--paper); color:var(--ink); padding:0;
+  }
+  .pad{padding:64px 76px}
+  .rule{position:absolute;left:76px;right:76px;top:0;height:1px;background:var(--rule)}
+  .folio{position:absolute;right:76px;bottom:38px;font-family:'Inter',Arial,sans-serif;
+    font-size:10px;letter-spacing:2.4px;color:var(--muted);text-transform:uppercase}
+  .running{position:absolute;left:76px;bottom:38px;font-family:'Inter',Arial,sans-serif;
+    font-size:10px;letter-spacing:2.4px;color:var(--muted);text-transform:uppercase}
+
+  .display{font-size:88px;line-height:1.02;letter-spacing:-2px;margin:0}
+  .display em{font-style:italic;color:var(--accent)}
+  .sub{font-family:'Inter',Arial,sans-serif;font-size:19px;line-height:1.7;color:var(--muted);
+    max-width:640px;margin:26px 0 0}
+  .meta{font-family:'Inter',Arial,sans-serif;font-size:11px;letter-spacing:2.6px;
+    text-transform:uppercase;color:var(--accent);margin-bottom:26px}
+  .serif-lede{font-size:26px;line-height:1.62;margin:0 0 22px}
+  .body{font-family:'Inter',Arial,sans-serif;font-size:15px;line-height:1.85;color:#3D3A35}
+  .small{font-family:'Inter',Arial,sans-serif;font-size:12px;line-height:1.75;color:var(--muted)}
+
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:34px;margin-top:44px}
+  .col .k{font-family:'Inter',Arial,sans-serif;font-size:11px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--accent);padding-bottom:10px;border-bottom:1px solid var(--rule)}
+  .col h4{font-size:20px;margin:14px 0 8px}
+  .col p{font-family:'Inter',Arial,sans-serif;font-size:13px;line-height:1.75;color:var(--muted);margin:0}
+
+  .pull{padding:0 76px;font-size:44px;line-height:1.35;letter-spacing:-.6px;margin:0}
+  .pull em{color:var(--accent);font-style:italic}
+  .attrib{font-family:'Inter',Arial,sans-serif;font-size:11px;letter-spacing:2.4px;
+    text-transform:uppercase;color:var(--muted);margin-top:32px}
+
+  .defs{margin-top:36px;border-top:1px solid var(--rule)}
+  .def{display:flex;gap:28px;padding:18px 0;border-bottom:1px solid var(--rule)}
+  .def dt{width:170px;font-family:'Inter',Arial,sans-serif;font-size:13px;font-weight:700;margin:0}
+  .def dd{flex:1;font-family:'Inter',Arial,sans-serif;font-size:13px;line-height:1.7;
+    color:var(--muted);margin:0}
+</style>
+</head>
+<body>
+
+<section class="slide">
+  <div class="rule"></div>
+  <div class="pad">
+    <p class="meta">Vol. 04 — Typography &amp; slides</p>
+    <h1 class="display">A deck should read<br>like a <em>page</em>,<br>not a dashboard.</h1>
+    <p class="sub">Editorial layouts put the argument first: one idea per page, generous margins,
+      and type that carries the structure instead of borders doing it.</p>
+  </div>
+  <div class="running">Deckpress · editorial preset</div>
+  <div class="folio">01</div>
+</section>
+
+<section class="slide">
+  <div class="rule"></div>
+  <div class="pad">
+    <p class="meta">01 — The argument</p>
+    <p class="serif-lede">Most decks fail for a structural reason, not a visual one: they answer
+      “what do we have?” when the room asked “what should we do?”</p>
+    <p class="body">This page is a single argument. The heading states it, the paragraph defends it,
+      and nothing else competes. When a page needs three columns, that is evidence that it is
+      really three pages.</p>
+    <div class="cols">
+      <div class="col">
+        <div class="k">One idea</div>
+        <h4>Per page</h4>
+        <p>If you cannot say the page in one sentence, the page is not finished.</p>
+      </div>
+      <div class="col">
+        <div class="k">Evidence</div>
+        <h4>Next to the claim</h4>
+        <p>Numbers belong beside the sentence they support, not collected in an appendix.</p>
+      </div>
+      <div class="col">
+        <div class="k">Margin</div>
+        <h4>Does the work</h4>
+        <p>White space is the cheapest way to signal that a page has been edited.</p>
+      </div>
+    </div>
+  </div>
+  <div class="running">Deckpress · editorial preset</div>
+  <div class="folio">02</div>
+</section>
+
+<section class="slide">
+  <div class="pad" style="padding-top:200px">
+    <p class="pull">“A slide is a <em>sentence</em> you can stand in front of,<br>not a container for bullets.”</p>
+    <p class="attrib">— Editorial rule, no. 3</p>
+  </div>
+  <div class="running">Deckpress · editorial preset</div>
+  <div class="folio">03</div>
+</section>
+
+<section class="slide">
+  <div class="rule"></div>
+  <div class="pad">
+    <p class="meta">02 — Working definitions</p>
+    <p class="serif-lede">Four terms this deck uses precisely.</p>
+    <dl class="defs">
+      <div class="def"><dt>Page job</dt><dd>What the reader must be able to do after seeing this page. Written before the layout.</dd></div>
+      <div class="def"><dt>Evidence</dt><dd>The smallest number or quote that makes the claim checkable.</dd></div>
+      <div class="def"><dt>Folio</dt><dd>Page number and running head. Editing, not decoration.</dd></div>
+      <div class="def"><dt>Bleed</dt><dd>An image or field that leaves the page. Used once per section at most.</dd></div>
+    </dl>
+  </div>
+  <div class="running">Deckpress · editorial preset</div>
+  <div class="folio">04</div>
+</section>
+
+<aside class="notes">
+  The editorial preset trades ornament for rhythm: one rule line, one accent colour,
+  serif display type, and margins wide enough to feel intentional.
+</aside>
+
+</body>
+</html>

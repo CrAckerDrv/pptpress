@@ -1,0 +1,42 @@
+# --- build artifacts --------------------------------------------------------
+*.pptx
+!examples/*.pptx
+
+# engine cache next to a built deck: <deck>.assets/
+*.assets/
+
+# previews and renders
+preview/
+shots/
+!examples/shots/
+
+# --- python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+env/
+.eggs/
+
+# --- tooling ---------------------------------------------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- editors / os ----------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# --- office lock files -----------------------------------------------------
+~$*
+.~lock.*#

@@ -1,0 +1,8 @@
+# Runtime — four pure-Python packages, no network, no browser.
+python-pptx>=0.6.23
+lxml>=4.9
+tinycss2>=1.2
+Pillow>=9.0
+
+# Development
+pytest>=7

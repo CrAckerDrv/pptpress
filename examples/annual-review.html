@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN" data-size="16:9">
+<head>
+<meta charset="utf-8">
+<title>年度经营复盘</title>
+<style>
+  :root{
+    --ink:#111827; --muted:#5B6474; --paper:#FBFAF7; --card:#FFFFFF;
+    --brand:#B4471F; --brand-soft:#F3E3D8; --navy:#1F3A5F; --line:#E5E0D6;
+  }
+  .slide{
+    font-family:'Inter','Segoe UI','Microsoft YaHei',sans-serif;
+    background:var(--paper); color:var(--ink); padding:56px 64px;
+    font-variant-numeric:tabular-nums;
+  }
+  .eyebrow{font-size:11.5px;letter-spacing:3px;text-transform:uppercase;color:var(--brand)}
+  h1{font-family:'Georgia','Songti SC',serif;font-size:56px;line-height:1.12;margin:18px 0 0;letter-spacing:-.5px}
+  h2{font-family:'Georgia','Songti SC',serif;font-size:36px;line-height:1.2;margin:10px 0 0;letter-spacing:-.3px}
+  h3{font-size:16px;margin:0 0 10px;letter-spacing:.2px}
+  .lead{font-size:17px;line-height:1.75;color:var(--muted);margin:16px 0 0;max-width:760px}
+  .small{font-size:12.5px;color:var(--muted);line-height:1.7}
+  .meta{position:absolute;right:64px;top:56px;text-align:right;font-size:11.5px;color:var(--muted);line-height:1.9}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:44px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:20px 18px}
+  .kpi .label{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted)}
+  .kpi .value{font-family:'Georgia','Songti SC',serif;font-size:34px;margin:8px 0 2px;line-height:1}
+  .kpi .delta{font-size:12px;color:#2F7D4F}
+  .kpi .delta.down{color:var(--brand)}
+
+  .two{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;margin-top:30px}
+  .points{margin:0;padding-left:18px}
+  .points li{font-size:14.5px;line-height:1.95;color:var(--muted);margin-bottom:4px}
+  .points li b{color:var(--ink)}
+
+  .matrix{width:100%;border-collapse:collapse;margin-top:26px;font-size:13.5px}
+  .matrix th{text-align:left;padding:11px 14px;background:var(--brand-soft);color:var(--brand);
+    font-size:11.5px;letter-spacing:1.2px;text-transform:uppercase;border-bottom:1px solid var(--line)}
+  .matrix td{padding:11px 14px;border-bottom:1px solid var(--line);color:var(--ink)}
+  .matrix td.muted{color:var(--muted)}
+  .matrix tr:last-child td{border-bottom:none}
+
+  .callout{background:var(--navy);color:#F7F9FC;border-radius:6px;padding:26px 28px;margin-top:34px}
+  .callout .q{font-family:'Georgia','Songti SC',serif;font-size:22px;line-height:1.6;margin:0}
+  .callout .by{font-size:12px;color:rgba(255,255,255,.62);margin-top:12px;letter-spacing:1px}
+
+  .timeline{display:flex;gap:0;margin-top:40px}
+  .tl{flex:1;border-left:2px solid var(--brand-soft);padding:0 18px 0 18px}
+  .tl:first-child{border-left:2px solid var(--brand)}
+  .tl .when{font-size:11px;letter-spacing:1.6px;color:var(--brand);text-transform:uppercase}
+  .tl b{display:block;font-size:15px;margin:8px 0 6px}
+  .tl span{font-size:12.5px;color:var(--muted);line-height:1.7}
+
+  .foot{position:absolute;left:64px;bottom:30px;font-size:10.5px;color:#9A9388;letter-spacing:1.6px}
+  .num{position:absolute;right:64px;bottom:30px;font-size:10.5px;color:#9A9388;letter-spacing:1.6px}
+</style>
+</head>
+<body>
+
+<section class="slide">
+  <div class="eyebrow">年度经营复盘 · FY2026</div>
+  <h1>增长换挡：<br>从规模扩张到单位效率</h1>
+  <p class="lead">全年营收 12.4 亿，同比增长 21%；经营性现金流转正，单人产出提升 34%。下一步的关键不是更快，而是更稳。</p>
+  <div class="kpis">
+    <div class="kpi"><div class="label">Revenue</div><div class="value">12.4亿</div><div class="delta">↑ 21.3% YoY</div></div>
+    <div class="kpi"><div class="label">Gross Margin</div><div class="value">63.8%</div><div class="delta">↑ 4.1pp</div></div>
+    <div class="kpi"><div class="label">Cash Flow</div><div class="value">+0.82亿</div><div class="delta">由负转正</div></div>
+    <div class="kpi"><div class="label">Rev / FTE</div><div class="value">184万</div><div class="delta">↑ 34%</div></div>
+  </div>
+  <div class="foot">INTERNAL · FY2026 REVIEW</div>
+  <div class="num">01</div>
+</section>
+
+<section class="slide">
+  <div class="meta">董事会材料<br>2026 · Q4</div>
+  <div class="eyebrow">01 / 结论先行</div>
+  <h2>三条主线，一句话</h2>
+  <div class="two">
+    <div>
+      <h3>本年度我们做对了什么</h3>
+      <ul class="points">
+        <li><b>聚焦高价值客群</b>：Top 200 客户贡献 71% 收入，续费率提升至 92%。</li>
+        <li><b>把交付标准化</b>：交付周期从 6 周压缩到 2.5 周，边际成本下降 18%。</li>
+        <li><b>组织上做减法</b>：管理层级由 6 层压到 4 层，决策周期缩短 40%。</li>
+      </ul>
+    </div>
+    <div>
+      <h3>明年的三个约束</h3>
+      <ul class="points">
+        <li>销售人效已接近行业上限，靠加人拉增长不再成立。</li>
+        <li>毛利率提升空间收窄，供应链议价能力见顶。</li>
+        <li>研发投入占比需维持 18% 以上，短期利润不可再压。</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot">INTERNAL · FY2026 REVIEW</div>
+  <div class="num">02</div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">02 / 数据</div>
+  <h2>分业务线表现</h2>
+  <table class="matrix">
+    <thead>
+      <tr><th>业务线</th><th>收入（亿元）</th><th>同比</th><th>毛利率</th><th>判断</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>企业订阅</td><td>6.8</td><td>+28%</td><td>72.4%</td><td>主引擎，继续加注</td></tr>
+      <tr><td>专业服务</td><td>3.1</td><td>+14%</td><td>48.2%</td><td>稳定现金流，控规模</td></tr>
+      <tr><td>硬件一体机</td><td>1.9</td><td>+9%</td><td>39.6%</td><td>战略卡位，暂不扩张</td></tr>
+      <tr><td>培训与认证</td><td>0.6</td><td class="muted">-3%</td><td>65.1%</td><td>转为生态投入</td></tr>
+    </tbody>
+  </table>
+  <p class="small" style="margin-top:16px">口径：剔除汇率影响，按 IFRS 确认收入；培训业务已并入生态预算。</p>
+  <div class="foot">INTERNAL · FY2026 REVIEW</div>
+  <div class="num">03</div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">03 / 路径</div>
+  <h2>下一年的四个动作</h2>
+  <div class="timeline">
+    <div class="tl">
+      <div class="when">Q1</div>
+      <b>客户分层落地</b>
+      <span>用统一口径重划客群，销售配额与客群价值挂钩。</span>
+    </div>
+    <div class="tl">
+      <div class="when">Q2</div>
+      <b>交付平台化</b>
+      <span>把定制交付沉淀为可复用模块，目标复用率 60%。</span>
+    </div>
+    <div class="tl">
+      <div class="when">Q3</div>
+      <b>定价体系重构</b>
+      <span>按价值而非席位定价，试点三条产品线。</span>
+    </div>
+    <div class="tl">
+      <div class="when">Q4</div>
+      <b>组织再压缩</b>
+      <span>区域与行业双线合并，减少一层汇报关系。</span>
+    </div>
+  </div>
+  <div class="callout">
+    <p class="q">“增长不是把油门踩到底，<br>而是知道什么时候该换挡。”</p>
+    <p class="by">— CEO 在 FY2026 年终会上的总结</p>
+  </div>
+  <div class="foot">INTERNAL · FY2026 REVIEW</div>
+  <div class="num">04</div>
+</section>
+
+<aside class="notes">
+  讲述节奏：结论 → 数据 → 路径。
+  第 3 页表格可现场打开 PPTX 直接改一个数字，演示"交付物仍然可编辑"。
+</aside>
+
+</body>
+</html>
