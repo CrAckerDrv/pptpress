@@ -1,3 +1,12 @@
+# GitHub Actions CI template
+#
+# Usage: copy this file to .github/workflows/ci.yml and commit it.
+# It is not enabled in-repo because the OAuth token used to push this
+# repository has no workflow scope; copied into place it runs as-is.
+#
+# Covers: 3 OS x Python 3.9/3.12 engine tests and example builds, plus
+# Windows --strict contrast/bleed/raster checks and an editability check.
+
 name: CI
 
 on:

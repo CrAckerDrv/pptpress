@@ -1,6 +1,6 @@
 # PPT Press
 
-[![CI](https://github.com/CrAckerDrv/pptpress/actions/workflows/ci.yml/badge.svg)](https://github.com/CrAckerDrv/pptpress/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/badge/CI-template%20in%20tools%2F-informational)](tools/github-actions-ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](pyproject.toml)
 
