@@ -1,5 +1,9 @@
 # PPT Press
 
+[![CI](https://github.com/CrAckerDrv/pptpress/actions/workflows/ci.yml/badge.svg)](https://github.com/CrAckerDrv/pptpress/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](pyproject.toml)
+
 **用 HTML/CSS 写版面，交付原生可编辑的 PowerPoint。**
 
 纯 Python 计算排版，直接写出 DrawingML 对象：没有浏览器、没有截图、没有写死的母版。
