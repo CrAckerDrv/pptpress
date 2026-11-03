@@ -359,14 +359,14 @@ def render_slide(slide, base_dir=""):
     return writer.render(), writer.issues
 
 
-def render_html(slides, base_dir="", title="Deckpress preview"):
+def render_html(slides, base_dir="", title="PPT Press preview"):
     """A scrollable HTML page showing every slide as SVG."""
     from .preview_html import build_html_page
 
     return build_html_page(slides, base_dir, title)
 
 
-def write_previews(slides, out_dir, base_dir="", title="Deckpress preview"):
+def write_previews(slides, out_dir, base_dir="", title="PPT Press preview"):
     os.makedirs(out_dir, exist_ok=True)
     images = []
     issues = {}

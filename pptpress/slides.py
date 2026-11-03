@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 SLIDE_TAGS = {"section", "div", "article"}
-DEFAULT_CLASSES = {"slide", "deckpress-slide"}
+DEFAULT_CLASSES = {"slide", "pptpress-slide"}
 
 
 def slide_nodes(document):
     """Return slide nodes in document order.
 
     Order of preference:
-    1. explicit ``.slide``/``.deckpress-slide`` elements;
+    1. explicit ``.slide``/``.pptpress-slide`` elements;
     2. ``<section>`` children of the deck container;
     3. any ``<section>`` element;
     4. the whole body as a single slide.

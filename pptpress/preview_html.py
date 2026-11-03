@@ -13,7 +13,7 @@ def _slide_markup(slide, base_dir):
     return svg, issues
 
 
-def build_html_page(slides, base_dir="", title="Deckpress preview", embed_svg=True, svg_dir=None):
+def build_html_page(slides, base_dir="", title="PPT Press preview", embed_svg=True, svg_dir=None):
     cards = []
     for slide in slides:
         if embed_svg:

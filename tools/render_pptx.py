@@ -32,7 +32,7 @@ def find_soffice():
 
 
 def _convert(soffice, source, out_dir, target_format):
-    profile = os.path.join(tempfile.gettempdir(), "deckpress-lo-profile")
+    profile = os.path.join(tempfile.gettempdir(), "pptpress-lo-profile")
     cmd = [
         soffice,
         "--headless",
@@ -75,7 +75,7 @@ def render_pptx(pptx_path, out_dir, dpi=96):
     if not soffice:
         raise RuntimeError("LibreOffice (soffice) not found; set $env:SOFFICE")
     os.makedirs(out_dir, exist_ok=True)
-    work = tempfile.mkdtemp(prefix="deckpress-render-")
+    work = tempfile.mkdtemp(prefix="pptpress-render-")
     total = _slide_count(pptx_path)
     images = []
     for index in range(1, total + 1):

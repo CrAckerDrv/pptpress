@@ -1,4 +1,4 @@
-# Deckpress
+# PPT Press
 
 **用 HTML/CSS 写版面，交付原生可编辑的 PowerPoint。**
 
@@ -6,11 +6,11 @@
 风格来自你写的一份 CSS，内容来自你的文案——构建一份 16 页课件约 0.6 秒。
 
 ```bash
-python -m deckpress build examples/ai-thinking-orchestration.html -o deck.pptx
+python -m pptpress build examples/ai-thinking-orchestration.html -o deck.pptx
 ```
 
 ```
-Deckpress build -> deck.pptx
+PPT Press build -> deck.pptx
   slides : 16
   objects: 812
   time   : 545 ms parse=4ms css=3ms layout=114ms pptx=424ms
@@ -33,7 +33,7 @@ Deckpress build -> deck.pptx
 - [交付校验](#交付校验)
 - [文档](#文档)
 - [支持范围](#支持范围)
-- [与 ppt-master 的实测对比](#与-ppt-master-的实测对比)
+- [实测数据](#实测数据)
 - [目录结构](#目录结构)
 - [路线图](#路线图)
 - [参与贡献](#参与贡献)
@@ -69,7 +69,7 @@ Deckpress build -> deck.pptx
 | 手工排版 | 时间黑洞 | 20 页耗掉一整天 |
 | 无头浏览器渲染 | 秒级构建 + 位图 | 字体不可控、产物不可编辑 |
 
-Deckpress 走第四条路的反面：**自己算排版**。因为版面几何在 PDF/PPTX 之前就已经
+PPT Press 走第四条路的反面：**自己算排版**。因为版面几何在 PDF/PPTX 之前就已经
 是确定的数字（点），所以不需要浏览器来"看图"，也就不需要把结果拍成图片。
 
 代价是 CSS 支持范围必须收窄——见[支持范围](#支持范围)。
@@ -102,9 +102,9 @@ LibreOffice **只**在可选的逐页 PNG 预览时用到。
 
 ```
 <skills-dir>/
-└─ deckpress/
+└─ pptpress/
    ├─ SKILL.md          ← 执行者读这个即获得完整规程
-   ├─ deckpress/        ← Python 包
+   ├─ pptpress/        ← Python 包
    ├─ tools/ docs/ examples/ tests/
    └─ requirements.txt
 ```
@@ -114,10 +114,10 @@ LibreOffice **只**在可选的逐页 PNG 预览时用到。
 ## 三个命令
 
 ```bash
-python -m deckpress build   deck.html -o deck.pptx       # 构建
-python -m deckpress preview deck.html -o preview/        # 逐页 SVG 预览
-python -m deckpress check   deck.html                    # 只校验，不落盘
-python -m deckpress themes                               # 列出内置主题
+python -m pptpress build   deck.html -o deck.pptx       # 构建
+python -m pptpress preview deck.html -o preview/        # 逐页 SVG 预览
+python -m pptpress check   deck.html                    # 只校验，不落盘
+python -m pptpress themes                               # 列出内置主题
 ```
 
 `build --json` 输出机器可读报告（页数、对象数、耗时、溢出清单），适合接 CI。
@@ -127,7 +127,7 @@ python -m deckpress themes                               # 列出内置主题
 ## Python API
 
 ```python
-from deckpress import build_file, preview_file
+from pptpress import build_file, preview_file
 
 result = build_file("deck.html", "deck.pptx")
 print(result.ok, len(result.slides), result.objects)
@@ -137,7 +137,7 @@ for issue in result.issues:      # 例如 "slide 7: content overflow (3pt) in <d
 preview_file("deck.html", "preview/")   # 每页一个 SVG
 ```
 
-底层入口在 `deckpress.pipeline`：`layout_document()` 只排版不写文件，
+底层入口在 `pptpress.pipeline`：`layout_document()` 只排版不写文件，
 便于拿几何做自动化断言（测试就是这么写的）。
 
 ---
@@ -245,7 +245,7 @@ python tools/bench.py                          # 批量构建 + 计时
 | [`docs/pattern-library.md`](docs/pattern-library.md) | 5 套气质配方 × 12 种页面骨架 |
 | [`docs/architecture.md`](docs/architecture.md) | 引擎分层、数据结构、坐标系统、扩展点 |
 | [`docs/roadmap.md`](docs/roadmap.md) | 技术路线图与优先级 |
-| [`docs/comparison.md`](docs/comparison.md) | 与 ppt-master 的实测对比与复现命令 |
+| [`docs/benchmarks.md`](docs/benchmarks.md) | 体积、耗时、产物尺寸与校验结果的复现命令 |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | 开发环境、分层责任、不可回退的三条约束 |
 | [`CHANGELOG.md`](CHANGELOG.md) | 版本记录 |
 
@@ -282,39 +282,55 @@ python tools/bench.py                          # 批量构建 + 计时
 
 ---
 
-## 与 ppt-master 的实测对比
+## 实测数据
 
-同一台机器（Windows 11 / Python 3.12），对照 `ppt-master` v6.8.0。
+全部为本项目自身的可复现测量（Windows 11 / Python 3.12 / 单机），
+复现命令见 [`docs/benchmarks.md`](docs/benchmarks.md)。
 
-| 指标 | Deckpress | ppt-master | 倍数 |
-|---|---|---|---|
-| 文件总数 | 43 | 13,051 | 303× 更少 |
-| 源码体积 | 0.45 MB | 37.7 MB | 84× 更小 |
-| Python 文件 | 19 | 336 | 18× 更少 |
-| Python 代码行 | 8,443 | 186,776 | 22× 更少 |
-| 文档 | 9 篇 | 230 篇 | 26× 更少 |
-| 随包第三方素材 | 0 | 图标库/音效/字体度量/形状 XML | — |
+**体积**
 
-| 场景 | Deckpress | ppt-master |
+| 指标 | 数值 |
+|---|---|
+| 源码文件 | 43 |
+| 源码体积 | 0.45 MB |
+| 引擎模块 | 19 个 / 7,415 行 |
+| 全部 Python 代码 | 26 个文件 / 8,443 行 |
+| 随包第三方素材 | 0 |
+
+**构建耗时**
+
+| 示例 | 页数 | 对象数 | 耗时 | 产物 |
+|---|---|---|---|---|
+| 16 页图表课件 | 16 | 812 | **541 ms** | 103 KB |
+| 6 页深色演示 | 6 | 195 | **105 ms** | 40 KB |
+| 4 页纸感复盘 | 4 | 119 | **91 ms** | 36 KB |
+| 4 页出版感演讲 | 4 | 86 | **59 ms** | 34 KB |
+
+**产物构成**（16 页课件）
+
+| 对象 | 数量 | 可编辑 |
 |---|---|---|
-| 4 页纸感复盘 | **86 ms** | 多阶段流水线，分钟级 |
-| 6 页深色演示 | **102 ms** | 同上 |
-| 16 页图表课件 | **545 ms** | 同上 |
-| 构建依赖 | 4 个纯 Python 包 | Python + 可选 Chromium / Office / 图片模型 / TTS |
-| 网络 | 完全离线 | 配图、TTS 需联网与密钥 |
+| 文本框 | 404 | 双击即可改字 |
+| 形状（含图表路径、卡片、色块） | 242 | 可改色、可缩放 |
+| 图片 | **0** | —— |
+| 可编辑字符 | 6,069 | 全部 |
 
-复现命令与逐项口径见 [`docs/comparison.md`](docs/comparison.md)。
+**校验**
 
-> 取向不同：ppt-master 强在"素材与能力面"（AI 配图、配音、视频、动效、模板导入），
-> Deckpress 强在"从想法到可编辑文件的最短路径"。
+```bash
+python -m pytest tests -q                       # 10 passed
+python tools/check_deck.py examples/*.pptx --strict   # 4 份示例 0 错误 0 警告
+```
+
+细项与口径见 [`docs/benchmarks.md`](docs/benchmarks.md)。
 
 ---
 
 ## 目录结构
 
 ```
-deckpress/
-├─ deckpress/            引擎（19 个模块，7.4k 行）
+pptpress/
+├─ pptpress/            引擎（19 个模块，7.4k 行）
 │  ├─ dom.py             HTML → DOM
 │  ├─ css.py              CSS 级联与计算样式
 │  ├─ values.py           长度/颜色/渐变/网格轨道解析
@@ -330,7 +346,7 @@ deckpress/
 ├─ tools/                 交付校验与基准
 ├─ tests/                 引擎自测（10 项）
 ├─ examples/              4 份示例 + 构建产物 + 图表生成脚本 + 截图
-└─ docs/                  写作指南、配方库、架构、路线图、对比
+└─ docs/                  写作指南、配方库、架构、路线图、实测数据
 ```
 
 ---

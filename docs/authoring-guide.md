@@ -1,4 +1,4 @@
-# Deckpress · authoring guide
+# PPT Press · authoring guide
 
 This is the reference the skill loads while writing pages. It is deliberately
 short: HTML + CSS in, an editable PPTX out.

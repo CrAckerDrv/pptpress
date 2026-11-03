@@ -28,7 +28,7 @@ class BuildResult:
     def summary(self):
         total = sum(self.timings.values())
         lines = [
-            f"Deckpress build -> {self.output}",
+            f"PPT Press build -> {self.output}",
             f"  slides : {len(self.slides)}",
             f"  objects: {self.objects}",
             f"  time   : {total * 1000:.0f} ms "

@@ -1,9 +1,9 @@
 """Command line interface.
 
-    python -m deckpress build deck.html -o deck.pptx
-    python -m deckpress preview deck.html -o preview/
-    python -m deckpress check deck.html
-    python -m deckpress themes
+    python -m pptpress build deck.html -o deck.pptx
+    python -m pptpress preview deck.html -o preview/
+    python -m pptpress check deck.html
+    python -m pptpress themes
 """
 
 from __future__ import annotations
@@ -108,7 +108,7 @@ def main(argv=None):
         print(f"missing dependencies: {', '.join(missing)}", file=sys.stderr)
         print(f"install with: python -m pip install {' '.join(missing)}", file=sys.stderr)
         return 1
-    parser = argparse.ArgumentParser(prog="deckpress", description="HTML -> editable PPTX")
+    parser = argparse.ArgumentParser(prog="pptpress", description="HTML -> editable PPTX")
     sub = parser.add_subparsers(dest="command")
 
     build_parser = sub.add_parser("build", help="build a .pptx from an HTML deck")

@@ -1,6 +1,6 @@
 # 贡献指南
 
-Deckpress 是一个约 7.4k 行的纯 Python 引擎，目标只有一个：
+PPT Press 是一个约 7.4k 行的纯 Python 引擎，目标只有一个：
 **把 HTML/CSS 版面精确地变成可编辑的 PowerPoint 对象。**
 改动请围绕这个目标，不要引入浏览器、不要引入位图回退。
 
@@ -9,8 +9,8 @@ Deckpress 是一个约 7.4k 行的纯 Python 引擎，目标只有一个：
 ## 1. 开发环境
 
 ```powershell
-git clone https://github.com/<owner>/deckpress
-cd deckpress
+git clone https://github.com/<owner>/pptpress
+cd pptpress
 python -m pip install -r requirements.txt
 python -m pip install pytest
 python -m pytest tests -q
@@ -21,7 +21,7 @@ python -m pytest tests -q
 ```powershell
 python -m pytest tests -q                          # 引擎自测（10 项）
 python tools/bench.py                              # 全部示例构建 + 耗时
-python -m deckpress build examples/aurora-launch.html -o build/aurora.pptx
+python -m pptpress build examples/aurora-launch.html -o build/aurora.pptx
 python tools/check_deck.py build/aurora.pptx       # 交付校验
 ```
 
@@ -64,7 +64,7 @@ python tools/render_pptx.py build/aurora.pptx build/shots
 ```powershell
 python -m pytest tests -q
 python tools/bench.py            # 确认没有明显变慢（阈值：单份 ≤ 1.5s）
-python -m deckpress build examples/ai-thinking-orchestration.html -o build/deck.pptx
+python -m pptpress build examples/ai-thinking-orchestration.html -o build/deck.pptx
 python tools/check_deck.py build/deck.pptx --strict
 ```
 
@@ -91,7 +91,7 @@ python tools/check_deck.py build/deck.pptx --strict
 ## 6. Bug 报告请附
 
 * 最小复现 HTML（能用 5 行说清就不要贴整份 deck）
-* `python -m deckpress build x.html -o x.pptx --json` 的输出
+* `python -m pptpress build x.html -o x.pptx --json` 的输出
 * 期望位置 vs 实际位置（点值，不是截图描述）
 * 平台、Python 版本、`python -m pip list` 里四个依赖的版本
 

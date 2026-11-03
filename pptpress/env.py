@@ -1,4 +1,4 @@
-"""Startup plumbing for Deckpress.
+"""Startup plumbing for PPT Press.
 
 Console output is forced to UTF-8 so CJK deck names and warning text survive a
 Windows code page, and optional dependencies are checked once with a message

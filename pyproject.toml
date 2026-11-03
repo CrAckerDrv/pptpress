@@ -3,13 +3,13 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "deckpress"
+name = "pptpress"
 version = "1.0.0"
 description = "Author decks in HTML/CSS, export fully editable PPTX. Pure Python, offline, no browser."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
-authors = [{ name = "Deckpress contributors" }]
+authors = [{ name = "PPT Press contributors" }]
 keywords = ["pptx", "powerpoint", "presentation", "html", "slides", "deck", "layout"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -37,16 +37,16 @@ dependencies = [
 dev = ["pytest>=7"]
 
 [project.scripts]
-deckpress = "deckpress.cli:main"
+pptpress = "pptpress.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/deckpress/deckpress"
-Repository = "https://github.com/deckpress/deckpress"
-Issues = "https://github.com/deckpress/deckpress/issues"
-Documentation = "https://github.com/deckpress/deckpress#readme"
+Homepage = "https://github.com/pptpress/pptpress"
+Repository = "https://github.com/pptpress/pptpress"
+Issues = "https://github.com/pptpress/pptpress/issues"
+Documentation = "https://github.com/pptpress/pptpress#readme"
 
 [tool.setuptools]
-packages = ["deckpress"]
+packages = ["pptpress"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

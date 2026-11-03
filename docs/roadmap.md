@@ -15,7 +15,7 @@
 **问题**：当前示例里的折线图是用 SVG 路径拼出来的——视觉上是矢量、可改色，
 但数据不携带语义。改一个点要改 HTML。
 
-**做法**：新增 `c:chart` 写出层（`deckpress/charts.py`）。
+**做法**：新增 `c:chart` 写出层（`pptpress/charts.py`）。
 
 ```html
 <div class="chart" data-chart="line" data-series="推理搜索,思维链,直接回答">
@@ -98,7 +98,7 @@
 
 * **主题市场**：主题是一份 JSON（CSS 变量 + 主题色），可单独分发与合成。
 * **骨架库**：把 `pattern-library.md` 的 12 种骨架做成可 `import` 的 HTML 片段。
-* **编辑器预览**：本地 `deckpress preview --serve`，改 HTML 浏览器自动刷新
+* **编辑器预览**：本地 `pptpress preview --serve`，改 HTML 浏览器自动刷新
   （预览走本仓库的 SVG 生成器，不引入浏览器渲染）。
 * **VS Code 插件**：`data-size` 提示、变量补全、构建命令面板。
 

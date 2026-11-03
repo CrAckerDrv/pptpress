@@ -1,4 +1,4 @@
-"""Tests for the Deckpress engine.
+"""Tests for the PPT Press engine.
 
 Run with ``python -m pytest tests -q``.
 """
@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pytest
 from pptx import Presentation
 
-from deckpress import pipeline, themes, util, values
+from pptpress import pipeline, themes, util, values
 
 
 DECK = """

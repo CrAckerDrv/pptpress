@@ -1,4 +1,4 @@
-"""Deckpress — HTML-first, editable-PPTX presentation engine.
+"""PPT Press — HTML-first, editable-PPTX presentation engine.
 
 The package turns a hand-authored HTML deck into a fully editable PowerPoint
 file: every heading, paragraph, card, image and table becomes a native

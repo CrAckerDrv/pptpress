@@ -26,7 +26,7 @@ from lxml import etree
 from pptx import Presentation
 from pptx.oxml.ns import qn
 
-from deckpress import util
+from pptpress import util
 
 NS = {"a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
 

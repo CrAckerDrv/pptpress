@@ -14,7 +14,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from deckpress import pipeline
+from pptpress import pipeline
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXAMPLES = os.path.join(ROOT, "examples")

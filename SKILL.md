@@ -1,5 +1,5 @@
 ---
-name: deckpress
+name: pptpress
 description: >
   HTML-first presentation workflow that authors decks as HTML/CSS and exports a
   fully editable PPTX — native text runs, shapes, tables, vector icons and
@@ -7,14 +7,14 @@ description: >
   Use when the user asks to create, generate, redesign, restyle, beautify or
   convert a presentation, deck, slide, PPT, PPTX, keynote, pitch, report deck or
   courseware; wants a web-page-style deck delivered as PowerPoint; or mentions
-  deckpress, HTML→PPTX, or "editable slides".
+  pptpress, HTML→PPTX, or "editable slides".
 metadata:
   version: "1.0.0"
   license: "MIT"
-  entrypoint: "python -m deckpress build <deck.html> -o <deck.pptx>"
+  entrypoint: "python -m pptpress build <deck.html> -o <deck.pptx>"
 ---
 
-# Deckpress · HTML 排版，可编辑交付
+# PPT Press · HTML 排版，可编辑交付
 
 一句话：**用 HTML/CSS 做设计，用纯 Python 计算排版，输出原生可编辑 PPTX。**
 没有浏览器、没有截图、没有写死的母版——风格来自一份 CSS，内容来自你的文案。
@@ -35,7 +35,7 @@ metadata:
 
 ```powershell
 python -m pip install -r requirements.txt   # python-pptx / lxml / tinycss2 / Pillow
-python -m deckpress themes                  # 列出内置主题
+python -m pptpress themes                  # 列出内置主题
 ```
 
 依赖极少、全程离线：不调用浏览器、不联网、不读注册表。
@@ -119,7 +119,7 @@ table / timeline / bars / quote / defs / section / closing）。
 ### Step 5 · 构建 + 校验
 
 ```powershell
-python -m deckpress build deck.html -o deck.pptx
+python -m pptpress build deck.html -o deck.pptx
 python tools/check_deck.py deck.pptx          # 对比度 / 出血 / 可编辑性
 python tools/render_pptx.py deck.pptx shots   # 需要逐页看图时
 ```
@@ -157,16 +157,16 @@ python tools/render_pptx.py deck.pptx shots   # 需要逐页看图时
 
 ---
 
-## 4. 与"模板派"的区别
+## 4. 设计契约
 
-| 维度 | 模板填充式 | Deckpress |
+这四条是本技能的定位，也是交付物的验收前提：
+
+| 契约 | 落地方式 | 违反时的表现 |
 |---|---|---|
-| 风格的来源 | 一个 `.pptx` 母版 | 一段 CSS + 6 个变量 |
-| 版式自由度 | 槽位大小固定 | 网格/弹性盒任意组合 |
-| 换风格成本 | 换文件、重排内容 | 改变量、重建 |
-| 输出可编辑性 | 取决于母版 | 文本/形状/表格全部原生 |
-| 构建依赖 | Office 或 Chromium | python-pptx，纯离线 |
-| 体积 | 数万文件 | 19 个模块 / 7.4k 行 Python |
+| 风格由 CSS 决定 | 一个 `.pptx` 母版都不需要；风格 = `:root` 变量 + 骨架 CSS | 换风格要重做版式 |
+| 版面自由 | Grid / Flex / 绝对定位任意组合，不受槽位约束 | 内容一变就撑破 |
+| 输出原生可编辑 | 文本是运行、形状是形状、表格是表格、图标是矢量 | 出现整页位图 |
+| 纯离线构建 | `python-pptx` + 三个解析/度量库，无浏览器、无网络 | 构建秒级、字体不可控 |
 
 ---
 
@@ -187,11 +187,11 @@ python tools/render_pptx.py deck.pptx shots   # 需要逐页看图时
 ## 6. 命令速查
 
 ```powershell
-python -m deckpress build   deck.html -o deck.pptx        # 构建
-python -m deckpress build   deck.html -o deck.pptx --json # 机器可读报告
-python -m deckpress preview deck.html -o preview/         # SVG/HTML 版面预览
-python -m deckpress check   deck.html                     # 只校验，不留文件
-python -m deckpress themes                              # 内置主题
+python -m pptpress build   deck.html -o deck.pptx        # 构建
+python -m pptpress build   deck.html -o deck.pptx --json # 机器可读报告
+python -m pptpress preview deck.html -o preview/         # SVG/HTML 版面预览
+python -m pptpress check   deck.html                     # 只校验，不留文件
+python -m pptpress themes                              # 内置主题
 python -m pytest tests -q                                # 引擎自测
 python tools/check_deck.py deck.pptx                     # 交付校验
 python tools/render_pptx.py deck.pptx shots              # 逐页 PNG（需 LibreOffice）
