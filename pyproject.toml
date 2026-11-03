@@ -40,10 +40,10 @@ dev = ["pytest>=7"]
 pptpress = "pptpress.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/pptpress/pptpress"
-Repository = "https://github.com/pptpress/pptpress"
-Issues = "https://github.com/pptpress/pptpress/issues"
-Documentation = "https://github.com/pptpress/pptpress#readme"
+Homepage = "https://github.com/CrAckerDrv/pptpress"
+Repository = "https://github.com/CrAckerDrv/pptpress"
+Issues = "https://github.com/CrAckerDrv/pptpress/issues"
+Documentation = "https://github.com/CrAckerDrv/pptpress#readme"
 
 [tool.setuptools]
 packages = ["pptpress"]

@@ -9,7 +9,7 @@ PPT Press 是一个约 7.4k 行的纯 Python 引擎，目标只有一个：
 ## 1. 开发环境
 
 ```powershell
-git clone https://github.com/<owner>/pptpress
+git clone https://github.com/CrAckerDrv/pptpress
 cd pptpress
 python -m pip install -r requirements.txt
 python -m pip install pytest
