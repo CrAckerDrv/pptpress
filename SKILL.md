@@ -112,8 +112,13 @@ table / timeline / bars / quote / defs / section / closing）。
 
 * 一页一个观点；需要三栏说明这其实是三页。
 * 标题用 `<br>` 主动断行——PPTX 不会重新折行，你看到的断点就是交付的断点。
+* **字号与字重必须显式写**：`h1{font-size:52px;font-weight:700}`、
+  `b{font-weight:700}`、`i{font-style:italic}`。语义标签的默认样式目前不生效，
+  裸写 `<h1>` 会退化成 12pt 正文（见 [`docs/known-gaps.md`](docs/known-gaps.md)）。
 * 字号阶梯：标题 40–88px，正文 13–20px，标注 10–12px；正文不小于 12px。
-* 强调只用 `<b>` / `<i>` / 一个强调色，不要三种一起上。
+* 强调只用 `<b>` / `<i>` / 一个强调色，不要三种一起上；用 `<b>` 时配一条
+  `b{font-weight:700}`。
+* SVG 标签名保持真实大小写（`linearGradient`、`viewBox`），否则会被 HTML 解析器小写化。
 * 每个 `font-family` 都写真实回退：`'Inter','Segoe UI','Microsoft YaHei',sans-serif`。
 
 ### Step 5 · 构建 + 校验
