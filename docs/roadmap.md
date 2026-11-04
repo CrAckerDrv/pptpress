@@ -38,19 +38,29 @@
 
 ## 阶段二 · CSS 覆盖补齐（P0）
 
-按"常见页面实际用得上"排序，不做长尾：
+按"常见页面实际用得上"排序，不做长尾。
+逐项现状来自实测（见 [`known-gaps.md`](known-gaps.md)），已完成项不再列入。
 
 | 属性 | 现状 | 计划 |
 |---|---|---|
-| `row-gap` / `column-gap` | 只有合并的 `gap` | 分离支持 |
-| `aspect-ratio` | 无 | 参与盒子高度推导 |
-| `min-height` / `max-height` | 部分 | 完整参与 flex/grid 分配 |
-| `align-content` | 无 | grid 多行对齐 |
-| `background-size: cover` + 位置 | 部分 | 完整 `object-fit` 语义 |
-| `border-style: dashed/dotted` | 无 | 映射到 `a:prstDash` |
-| `text-decoration: line-through` | 无 | 原生删除线 |
-| `font-variant-numeric` | 无 | 数字等宽（对表格很关键） |
-| `writing-mode` | 无 | 竖排（海报/竖版场景） |
+| `aspect-ratio` | 未解析，高度回落为 0 | 参与盒子高度推导 |
+| `align-content` | 忽略，grid 行永远贴顶 | 多行对齐 |
+| `grid-column: span N` / 显式 `grid-row` | 忽略，按 DOM 顺序逐格填 | 轨道跨度与显式定位 |
+| `text-decoration: line-through` | 解析了但写出时只看 `underline` | 原生删除线 |
+| `text-shadow` | 解析了但只写形状阴影 | run 级 `effectLst` |
+| `<ol>` 序号 | 输出圆点 `buChar` | `buAutoNum` |
+| `border-radius` 四角不同 / 椭圆 | 只取最大半径 | 自定义几何 |
+| `transform: translateX(-50%)` | 只支持 `rotate` | 让居中定位可用 |
+| `height: N%` 在定高父容器内 | 按画布而非父容器解析（算错） | 修正百分比基准 |
+| `font-variant-numeric` | 无槽位 | 数字等宽（表格刚需） |
+| `writing-mode` | 无槽位 | 竖排（海报/竖版场景） |
+| `::before` / `::after` 内容 | 匹配得到但内容不生成 | 伪元素生成 |
+| `calc()` / `clamp()` | 未解析 | 简单算术 |
+
+已完成、无需再排期：`row-gap`/`column-gap` 分离、`border-style: dashed/dotted`
+（→ `a:prstDash`）、`text-align: justify`、负 `letter-spacing`、逐边边框、
+`box-shadow`、`linear-gradient`、`transform: rotate()`、逐格边框的表格、
+`rem`/`em`/`%`/`vw`/`vh` 字号。
 
 **验收**：`docs/authoring-guide.md` 的支持表与实现一一对应，无"文档写了但没做"的条目。
 

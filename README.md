@@ -250,6 +250,7 @@ python tools/bench.py                          # 批量构建 + 计时
 | [`docs/architecture.md`](docs/architecture.md) | 引擎分层、数据结构、坐标系统、扩展点 |
 | [`docs/roadmap.md`](docs/roadmap.md) | 技术路线图与优先级 |
 | [`docs/benchmarks.md`](docs/benchmarks.md) | 体积、耗时、产物尺寸与校验结果的复现命令 |
+| [`docs/known-gaps.md`](docs/known-gaps.md) | 实测确认的缺失能力：现象、根因、代码位置、修复顺序 |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | 开发环境、分层责任、不可回退的三条约束 |
 | [`CHANGELOG.md`](CHANGELOG.md) | 版本记录 |
 

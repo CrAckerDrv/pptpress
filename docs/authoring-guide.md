@@ -38,15 +38,24 @@ is not listed here, it is silently dropped rather than rendered as a picture.
 |---|---|---|
 | `div`, `section`, painted box | Autoshape (rect / rounded rect) with fill, border, shadow | Yes — colour, corner, border |
 | `h1`…`h6`, `p`, `li`, `blockquote` | Text box, one **paragraph per laid-out line** | Yes — text, font, size, colour |
-| `<b> <i> <u> <span style>` | Runs inside the paragraph | Yes |
+| `<b> <i> <u> <span style>` | Runs inside the paragraph | Yes — but `<b>`/`<i>` need an explicit `font-weight`/`font-style` (see below) |
 | `ul` / `ol` → `li` | Paragraph with a native bullet (`buChar`) | Yes — bullet style |
 | `img` | Picture with `object-fit` crop | Yes — replace, crop, recolour |
 | inline `<svg>` | **Native vector shapes** (custom geometry) | Yes — can be recoloured |
-| `table` | PowerPoint table (merges, per-cell borders) | Yes — edit cells live |
+| `table` | PowerPoint table with merged cells and per-cell borders | Yes — edit cells live |
 | `background` | Slide background / full-bleed shape | Yes |
 | `box-shadow` | Native outer shadow | Yes |
-| `linear-gradient` / `radial-gradient` | Native gradient fill | Yes |
+| `linear-gradient` | Native gradient fill | Yes |
+| `radial-gradient` | Native gradient fill, approximated as a linear ramp | Yes — colour stops only |
 | `transform: rotate()` | Shape rotation | Yes |
+
+> **Two rules that save an afternoon:**
+>
+> 1. **Always set `font-size` and `font-weight` explicitly.** A bare `<h1>` currently
+>    renders at 12 pt / 400, and `<b>` without CSS is not bold — the semantic defaults
+>    are not applied. Measured and tracked in [`known-gaps.md`](known-gaps.md).
+> 2. **Keep SVG tag names in their real case** (`linearGradient`, `viewBox`). The HTML
+>    parser lowercases them, which silently turns a gradient SVG into a PNG.
 
 Never produce a full-page picture: the exporter rasterises *nothing* except
 SVG icons that use filters, masks, clip-paths or text.
@@ -102,6 +111,9 @@ h1     { font-size:52px; line-height:1.1; letter-spacing:-1px; }
 ```
 
 * Font sizes are in **px** like the web; they are converted to points on export.
+  `pt`, `rem`, `em`, `%`, `vw`, `vh` also resolve (2 vw → 19.2 pt on a 16:9 canvas).
+* **Write sizes and weights yourself** — `h1{font-size:52px;font-weight:700}`,
+  `b{font-weight:700}`, `i{font-style:italic}`. Tag defaults are not applied yet.
 * The **first installed family** of the stack is written into the PPTX, so the
   measurement font and the file's font are always the same. Put a real fallback
   in every stack (`'Inter','Segoe UI','Microsoft YaHei',sans-serif`).
