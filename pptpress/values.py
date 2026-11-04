@@ -10,6 +10,17 @@ import re
 
 from . import util
 
+
+class Percent(float):
+    """A percentage width/height kept as a 0..1 fraction until layout time.
+
+    Subclassing ``float`` keeps the value arithmetic-friendly while letting the
+    engine tell ``height:100%`` (a fraction) apart from ``height:1px`` (a very
+    thin line) — both would otherwise look like a number below 1.
+    """
+
+    __slots__ = ()
+
 LENGTH_RE = re.compile(r"^([+-]?(?:\d+\.?\d*|\.\d+))(px|pt|em|rem|%|vw|vh|vmin|vmax|in|cm|mm|pc|q)?$", re.I)
 
 _ABS_UNITS = {
@@ -177,24 +188,73 @@ def parse_border_shorthand(text, default_color=None):
 
 
 def parse_radius(text):
-    """Returns (top_left, top_right, bottom_right, bottom_left) in points."""
+    """Parse ``border-radius`` into four corners, each ``(rx, ry)``.
+
+    ``rx``/``ry`` are either absolute points or a :class:`Percent` fraction of the
+    box width/height. Keeping percentages unresolved is what makes
+    ``border-radius:50%`` a real ellipse and ``24px 0 0 0`` a per-corner shape —
+    both are impossible once the value has been flattened into one number.
+    """
     if not text:
         return None
-    parts = [p for p in re.split(r"[\s/]+", text.strip()) if p]
-    lengths = [parse_length(p) for p in parts]
-    lengths = [l for l in lengths if l is not None]
-    if not lengths:
+    raw = text.strip()
+    horizontal, _, vertical = raw.partition("/")
+    horizontal_values = _radius_components(horizontal)
+    if not horizontal_values:
         return None
-    values = [l.resolve(font_size_pt=None) if not l.percent else l.value for l in lengths]
+    vertical_values = _radius_components(vertical) if vertical.strip() else list(horizontal_values)
+    if not vertical_values:
+        vertical_values = list(horizontal_values)
+    horizontal_values = _expand_corners(horizontal_values)
+    vertical_values = _expand_corners(vertical_values)
+    if len(vertical_values) != len(horizontal_values):
+        vertical_values = _expand_corners(vertical_values[: len(horizontal_values)] or horizontal_values)
+    return [
+        (horizontal_values[index], vertical_values[index])
+        for index in range(4)
+    ]
+
+
+def _radius_components(text):
+    parts = [part for part in re.split(r"\s+", (text or "").strip()) if part]
+    out = []
+    for part in parts:
+        if part.endswith("%"):
+            try:
+                out.append(Percent(float(part[:-1]) / 100.0))
+            except ValueError:
+                continue
+            continue
+        length = parse_length(part)
+        if length is None:
+            continue
+        out.append(length.resolve(font_size_pt=None) or 0.0)
+    return out
+
+
+def _expand_corners(items):
+    values = list(items[:4])
+    if not values:
+        return []
     if len(values) == 1:
         values = values * 4
     elif len(values) == 2:
         values = [values[0], values[1], values[0], values[1]]
     elif len(values) == 3:
         values = [values[0], values[1], values[2], values[1]]
-    else:
-        values = values[:4]
     return values
+
+
+def resolve_radius(corners, width, height):
+    """Turn stored corners into points once the box size is known."""
+    if not corners:
+        return None
+    out = []
+    for rx, ry in corners[:4]:
+        radius_x = width * float(rx) if isinstance(rx, Percent) else (rx or 0.0)
+        radius_y = height * float(ry) if isinstance(ry, Percent) else (ry or 0.0)
+        out.append((max(0.0, radius_x), max(0.0, radius_y)))
+    return out
 
 
 class GradientStop:
@@ -514,7 +574,12 @@ def parse_shadow(value, font_size_pt=16.0):
 
 
 def parse_transform(value):
-    """Return a dict {'rotate': deg, 'scale': (sx, sy), 'translate': (x, y)}."""
+    """Return a dict {'rotate': deg, 'scale': (sx, sy), 'translate': (x, y)}.
+
+    ``translate`` keeps *percent* components unresolved (``Percent`` instances),
+    because "translateX(-50%)" means half of the element's own width — a number
+    the layout engine only knows after it has measured the box.
+    """
     result = {"rotate": 0.0, "scale": (1.0, 1.0), "translate": (0.0, 0.0)}
     if not value or value.strip().lower() == "none":
         return result
@@ -529,18 +594,60 @@ def parse_transform(value):
             sy = float(parts[1]) if len(parts) > 1 else sx
             result["scale"] = (result["scale"][0] * sx, result["scale"][1] * sy)
         elif name in ("translate", "translatex", "translatey"):
-            if name == "translatex":
-                result["translate"] = (result["translate"][0] + parse_length(parts[0]).resolve(), result["translate"][1])
-            elif name == "translatey":
-                result["translate"] = (result["translate"][0], result["translate"][1] + parse_length(parts[0]).resolve())
-            elif len(parts) >= 2:
-                result["translate"] = (
-                    result["translate"][0] + parse_length(parts[0]).resolve(),
-                    result["translate"][1] + parse_length(parts[1]).resolve(),
-                )
-            elif parts:
-                result["translate"] = (result["translate"][0] + parse_length(parts[0]).resolve(), result["translate"][1])
+            offset_x, offset_y = _translate_offsets(name, parts)
+            current_x, current_y = result["translate"]
+            result["translate"] = (
+                _add_offset(current_x, offset_x),
+                _add_offset(current_y, offset_y),
+            )
     return result
+
+
+def _add_offset(current, incoming):
+    """Add two translate components while keeping ``Percent`` a ``Percent``.
+
+    ``0.0 + Percent(-0.5)`` returns a plain ``float``: ``float.__add__`` drops the
+    subclass, so a naive sum silently degrades "translateX(-50%)" to a raw -0.5
+    that is later read as "-0.5 pt" instead of "half my own width".
+    """
+    if isinstance(current, Percent) and not isinstance(incoming, Percent):
+        return current
+    if isinstance(incoming, Percent) and not isinstance(current, Percent):
+        return incoming
+    if isinstance(current, Percent) and isinstance(incoming, Percent):
+        return Percent(float(current) + float(incoming))
+    return (current or 0.0) + (incoming or 0.0)
+
+
+def _translate_offsets(name, parts):
+    """Resolve one translate()/translateX()/translateY() into (x, y) components."""
+    first = _translate_component(parts[0]) if parts else 0.0
+    second = _translate_component(parts[1]) if len(parts) > 1 else 0.0
+    if name == "translatex":
+        return first, 0.0
+    if name == "translatey":
+        return 0.0, first
+    return first, second
+
+
+def _translate_component(token):
+    """A length in pt, or a ``Percent`` when the token is a percentage."""
+    token = (token or "").strip()
+    if token.endswith("%"):
+        try:
+            return Percent(float(token[:-1]) / 100.0)
+        except ValueError:
+            return 0.0
+    length = parse_length(token)
+    return (length.resolve() if length is not None else 0.0) or 0.0
+
+
+def resolve_translate(transform, width, height):
+    """Turn the stored translate into points once the box size is known."""
+    raw_x, raw_y = transform.get("translate", (0.0, 0.0))
+    offset_x = width * float(raw_x) if isinstance(raw_x, Percent) else (raw_x or 0.0)
+    offset_y = height * float(raw_y) if isinstance(raw_y, Percent) else (raw_y or 0.0)
+    return offset_x, offset_y
 
 
 GRID_TEMPLATE_RE = re.compile(r"^(?:(?:repeat|minmax)\([^()]*(?:\([^()]*\)[^()]*)*\)|[^\s]+)\s*.*$", re.I)
@@ -550,35 +657,11 @@ def parse_track_list(text, size=0.0, gap=0.0):
     """Expand a grid-template-columns/rows value into resolved track sizes.
 
     Supports ``1fr``, ``px/pt/%/em`` lengths, ``auto``, ``min-content``,
-    ``max-content``, ``repeat(n, ...)`` and ``repeat(auto-fit, ...)``.
+    ``max-content``, ``minmax()``, ``repeat(n, ...)`` and ``repeat(auto-fit, ...)``.
     """
     if not text:
         return []
-    tokens = _split_tracks(text)
-    tracks = []
-    for token in tokens:
-        repeat_match = re.match(r"^repeat\(\s*(auto-fit|auto-fill|\d+)\s*,\s*(.*)\)$", token.strip(), re.I | re.S)
-        if repeat_match:
-            count_token, inner = repeat_match.groups()
-            inner_tracks = _split_tracks(inner)
-            if count_token.lower() in ("auto-fit", "auto-fill"):
-                fixed = 0.0
-                flexible = 0
-                for item in inner_tracks:
-                    if _is_fr(item):
-                        flexible += _fr_value(item)
-                    else:
-                        fixed += parse_length(item).resolve(base_pt=size) or 0.0
-                count = 1
-                if fixed + gap > 0:
-                    count = max(1, int((size + gap) // (fixed + gap))) if fixed > 0 else 1
-                elif flexible:
-                    count = max(1, len(inner_tracks) or 1)
-                tracks.extend(inner_tracks * max(1, count))
-            else:
-                tracks.extend(inner_tracks * int(count_token))
-            continue
-        tracks.append(token)
+    tracks = [_minmax_track(token) for token in _expand_tracks(text, size, gap)]
     resolved = []
     fr_total = 0.0
     fixed_total = gap * max(0, len(tracks) - 1)
@@ -606,6 +689,52 @@ def parse_track_list(text, size=0.0, gap=0.0):
     return out
 
 
+def _expand_tracks(text, size, gap):
+    """Expand ``repeat()`` into a flat token list, sizing auto-fit by the minimum."""
+    tracks = []
+    for token in _split_tracks(text):
+        repeat_match = re.match(
+            r"^repeat\(\s*(auto-fit|auto-fill|\d+)\s*,\s*(.*)\)$", token.strip(), re.I | re.S
+        )
+        if not repeat_match:
+            tracks.append(token)
+            continue
+        count_token, inner = repeat_match.groups()
+        inner_tracks = _split_tracks(inner)
+        if count_token.lower() in ("auto-fit", "auto-fill"):
+            # auto-fit/auto-fill pick the column count from the track's *minimum*,
+            # then each column is allowed to grow into its maximum.
+            floor = 0.0
+            for item in inner_tracks:
+                floor += _track_floor(item, size)
+            if floor > 0:
+                # +gap twice: one gap between each pair, and the container's own
+                # trailing edge has to fit the last column.
+                count = max(1, int((size + gap) // (floor + gap)))
+            else:
+                # No intrinsic minimum (min-content / fr): one column per template
+                # track is the only safe answer.
+                count = max(1, len(inner_tracks) or 1)
+            tracks.extend(inner_tracks * max(1, count))
+        else:
+            tracks.extend(inner_tracks * max(0, int(count_token)))
+    return tracks
+
+
+def _track_floor(token, size):
+    """Smallest width a track may occupy (the ``min`` of ``minmax``)."""
+    text = token.strip()
+    match = _MINMAX_RE.match(text)
+    if match:
+        text = match.group(1).strip()
+    if _is_fr(text):
+        return 0.0
+    if text.lower() in ("auto", "min-content", "max-content", "fit-content"):
+        return 0.0
+    length = parse_length(text)
+    return (length.resolve(base_pt=size) if length is not None else 0.0) or 0.0
+
+
 def _split_tracks(text):
     tracks = []
     depth = 0
@@ -628,6 +757,24 @@ def _split_tracks(text):
 
 def _is_fr(token):
     return bool(re.match(r"^[\d.]+fr$", token.strip(), re.I))
+
+
+_MINMAX_RE = re.compile(r"^minmax\(\s*([^,]+?)\s*,\s*(.+?)\s*\)$", re.I | re.S)
+
+
+def _minmax_track(token):
+    """Reduce ``minmax(a, b)`` to its upper bound.
+
+    Grid treats the track as "at least a, at most b". A fixed-height deck has no
+    room to grow, so the upper bound is the one that decides the column width —
+    and it is the value the flexible/fixed split below has to look at. Without
+    this reduction ``parse_length("minmax(200px,1fr)")`` returns ``None`` and the
+    caller crashes on ``None.resolve(...)``.
+    """
+    match = _MINMAX_RE.match(token.strip())
+    if match:
+        return match.group(2).strip()
+    return token
 
 
 def _fr_value(token):
@@ -659,6 +806,95 @@ def parse_justify_content(value):
             return "space-center"
         return "end" if raw in ("end", "flex-end", "right") else "start"
     return "start"
+
+
+def parse_grid_column(value):
+    """``span 2`` / ``2 / span 3`` / ``2`` -> ``(start, span)``; ``(None, 1)`` if absent.
+
+    ``start`` is 1-based, ``None`` means "auto placement". ``span`` defaults to 1.
+    """
+    raw = (value or "").strip().lower()
+    if not raw or raw == "auto":
+        return (None, 1)
+    span = 1
+    start = None
+    for part in (piece.strip() for piece in raw.split("/")):
+        if part.startswith("span"):
+            digits = part[4:].strip()
+            if digits.isdigit():
+                span = max(1, int(digits))
+        elif part.isdigit():
+            if start is None:
+                start = max(1, int(part))
+            else:
+                span = max(1, int(part))
+    return (start, span)
+
+
+def parse_align_content(value):
+    """Grid cross-axis distribution -> ``start`` / ``center`` / ``end`` / ``space-between``."""
+    raw = (value or "").strip().lower()
+    if raw in ("center",):
+        return "center"
+    if raw in ("end", "flex-end"):
+        return "end"
+    if raw in ("space-between", "space-around", "space-evenly"):
+        return "space-between"
+    return "start"
+
+
+_OBJECT_POSITION_KEYWORDS = {
+    "left": 0.0, "top": 0.0, "center": 50.0,
+    "right": 100.0, "bottom": 100.0,
+}
+
+
+def parse_object_position(value):
+    """``"right bottom"`` / ``"50% 20%"`` -> ``(x, y)`` as fractions of the slack."""
+    raw = (value or "").strip().lower()
+    if not raw:
+        return (0.5, 0.5)
+    parts = [part for part in raw.split() if part]
+    if len(parts) == 1:
+        parts = parts * 2
+
+    def component(token):
+        token = token.strip()
+        if token in _OBJECT_POSITION_KEYWORDS:
+            return _OBJECT_POSITION_KEYWORDS[token] / 100.0
+        if token.endswith("%"):
+            try:
+                return float(token[:-1]) / 100.0
+            except ValueError:
+                return 0.5
+        try:
+            return float(token) / 100.0
+        except ValueError:
+            return 0.5
+
+    return (component(parts[0]), component(parts[1]))
+
+
+def parse_aspect_ratio(value):
+    """``"16/9"`` / ``"1.5"`` / ``"auto"`` -> a float ratio or ``None``."""
+    raw = (value or "").strip().lower()
+    if not raw or raw == "auto":
+        return None
+    if "/" in raw:
+        left, _, right = raw.partition("/")
+        try:
+            numerator = float(left.strip())
+            denominator = float(right.strip())
+        except ValueError:
+            return None
+        if numerator > 0 and denominator > 0:
+            return numerator / denominator
+        return None
+    try:
+        ratio = float(raw)
+    except ValueError:
+        return None
+    return ratio if ratio > 0 else None
 
 
 def parse_text_align(value):

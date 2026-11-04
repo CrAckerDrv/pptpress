@@ -9,11 +9,11 @@
 
 | 指标 | 数值 |
 |---|---|
-| 源码文件 | 43 |
-| 源码体积 | 0.45 MB |
-| 引擎模块 | 19 个 / 7,415 行 |
-| 全部 Python 代码 | 26 个文件 / 8,443 行 |
-| 文档 | 9 篇 / 1,565 行 |
+| 源码文件 | 51 |
+| 源码体积 | 0.52 MB |
+| 引擎模块 | 19 个 / 8,181 行 |
+| 全部 Python 代码 | 27 个文件 / 9,492 行 |
+| 文档 | 14 篇 / 2,267 行 |
 | 随包第三方素材 | 0 |
 
 "源码"指除 `examples/*.pptx` 与 `examples/shots/*.png` 之外的全部文件。
@@ -24,10 +24,10 @@
 
 ```
 deck                            slides  objects       ms      KB  issues
-ai-thinking-orchestration.html      16      812      541     103  0
-aurora-launch.html                   6      195      105      40  0
-annual-review.html                   4      119       91      36  0
-editorial-keynote.html               4       86       59      34  0
+ai-thinking-orchestration.html      16      812      556     103  0
+aurora-launch.html                   6      195      107      40  0
+annual-review.html                   4      119       87      36  0
+editorial-keynote.html               4       86       63      34  0
 ```
 
 计时包含解析、样式计算、排版与写出 PPTX；不含 PNG 预览（预览是独立的可选步骤）。
@@ -38,8 +38,8 @@ editorial-keynote.html               4       86       59      34  0
 |---|---|---|
 | parse | 4 ms | lxml 解析 HTML |
 | css | 3 ms | 级联与计算样式 |
-| layout | 114 ms | 断行 + 几何（主要成本是字体度量） |
-| pptx | 424 ms | python-pptx 写盘（zip + XML 序列化） |
+| layout | 120 ms | 断行 + 几何（主要成本是字体度量） |
+| pptx | 430 ms | python-pptx 写盘（zip + XML 序列化） |
 
 **结论**：写盘比排版贵。优化顺序是 XML 生成 → 字体度量缓存 → 并行分页，
 所以路线图把"XML 直写 + 并行分页"排在性能项而不是排版项。
@@ -61,7 +61,7 @@ editorial-keynote.html               4       86       59      34  0
 ## 4. 校验结果
 
 ```bash
-python -m pytest tests -q                                  # 10 passed
+python -m pytest tests -q                                  # 43 passed
 python tools/check_deck.py examples/*.pptx --strict         # 0 错误 0 警告
 python tools/verify_editability.py examples/ai-thinking-orchestration.pptx \
        --source examples/ai-thinking-orchestration.html     # 全部段落可编辑

@@ -4,10 +4,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](pyproject.toml)
 
-**用 HTML/CSS 写版面，交付原生可编辑的 PowerPoint。**
+**用 HTML/CSS 写版面，交付原生可编辑的 PowerPoint。** ·
+[English](README.en.md)
 
 纯 Python 计算排版，直接写出 DrawingML 对象：没有浏览器、没有截图、没有写死的母版。
-风格来自你写的一份 CSS，内容来自你的文案——构建一份 16 页课件约 0.6 秒。
+风格来自你写的一份 CSS，内容来自你的文案——构建一份 16 页课件约 0.55 秒。
 
 ```bash
 python -m pptpress build examples/ai-thinking-orchestration.html -o deck.pptx
@@ -296,20 +297,20 @@ python tools/bench.py                          # 批量构建 + 计时
 
 | 指标 | 数值 |
 |---|---|
-| 源码文件 | 43 |
-| 源码体积 | 0.45 MB |
-| 引擎模块 | 19 个 / 7,415 行 |
-| 全部 Python 代码 | 26 个文件 / 8,443 行 |
+| 源码文件 | 51 |
+| 源码体积 | 0.52 MB |
+| 引擎模块 | 19 个 / 8,181 行 |
+| 全部 Python 代码 | 27 个文件 / 9,492 行 |
 | 随包第三方素材 | 0 |
 
 **构建耗时**
 
 | 示例 | 页数 | 对象数 | 耗时 | 产物 |
 |---|---|---|---|---|
-| 16 页图表课件 | 16 | 812 | **541 ms** | 103 KB |
-| 6 页深色演示 | 6 | 195 | **105 ms** | 40 KB |
-| 4 页纸感复盘 | 4 | 119 | **91 ms** | 36 KB |
-| 4 页出版感演讲 | 4 | 86 | **59 ms** | 34 KB |
+| 16 页图表课件 | 16 | 812 | **556 ms** | 103 KB |
+| 6 页深色演示 | 6 | 195 | **107 ms** | 40 KB |
+| 4 页纸感复盘 | 4 | 119 | **87 ms** | 36 KB |
+| 4 页出版感演讲 | 4 | 86 | **63 ms** | 34 KB |
 
 **产物构成**（16 页课件）
 
@@ -325,7 +326,7 @@ python tools/bench.py                          # 批量构建 + 计时
 **校验**
 
 ```bash
-python -m pytest tests -q                       # 10 passed
+python -m pytest tests -q                       # 43 passed
 python tools/check_deck.py examples/*.pptx --strict   # 4 份示例 0 错误 0 警告
 ```
 
@@ -351,7 +352,7 @@ pptpress/
 │  ├─ preview*.py         SVG / HTML 预览
 │  └─ pipeline.py  cli.py  slides.py  util.py  env.py
 ├─ tools/                 交付校验与基准
-├─ tests/                 引擎自测（10 项）
+├─ tests/                 引擎与回归测试（43 项）
 ├─ examples/              4 份示例 + 构建产物 + 图表生成脚本 + 截图
 └─ docs/                  写作指南、配方库、架构、路线图、实测数据
 ```

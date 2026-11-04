@@ -14,7 +14,7 @@ import os
 import sys
 import time
 
-from . import env, themes, util
+from . import __version__, env, themes, util
 from .pipeline import build, preview
 
 
@@ -109,6 +109,11 @@ def main(argv=None):
         print(f"install with: python -m pip install {' '.join(missing)}", file=sys.stderr)
         return 1
     parser = argparse.ArgumentParser(prog="pptpress", description="HTML -> editable PPTX")
+    parser.add_argument(
+        "--version", action="version",
+        version=f"pptpress {__version__}",
+        help="print the version and exit",
+    )
     sub = parser.add_subparsers(dest="command")
 
     build_parser = sub.add_parser("build", help="build a .pptx from an HTML deck")

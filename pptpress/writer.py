@@ -22,7 +22,7 @@ from pptx.enum.text import MSO_ANCHOR, MSO_AUTO_SIZE, PP_ALIGN
 from pptx.oxml.ns import qn
 from pptx.util import Emu
 
-from . import svgicon, svgshape, util, xmlutil
+from . import svgicon, svgshape, util, values, xmlutil
 
 DASH_MAP = {"dashed": "dash", "dotted": "sysDot", "dashdot": "dashDot"}
 BULLET_CHARS = {"disc": "•", "circle": "◦", "square": "▪", "none": ""}
@@ -104,11 +104,90 @@ class SlideWriter:
         self.count += 1
         return element
 
+    def _rounded_shape(self, x, y, width, height, corners, name):
+        """Build a rect with four independent elliptical corners.
+
+        ``custGeom`` is the only DrawingML construct that can describe "24px on
+        the top-left, square elsewhere" or "50% / 20%"; a roundRect's single
+        adjustment can express neither.
+        """
+        shape = self._rect(x, y, width, height, name, MSO_SHAPE.RECTANGLE)
+        sp_pr = shape._element.spPr
+        for geometry in list(sp_pr):
+            if geometry.tag in (qn("a:prstGeom"), qn("a:custGeom")):
+                sp_pr.remove(geometry)
+        custom = etree.Element(qn("a:custGeom"))
+        path_list = etree.SubElement(custom, qn("a:pathLst"))
+        path = etree.SubElement(path_list, qn("a:path"))
+        path.set("w", str(int(round(util.pt2emu(max(0.01, width))))))
+        path.set("h", str(int(round(util.pt2emu(max(0.01, height))))))
+        box_w = max(0.01, width)
+        box_h = max(0.01, height)
+
+        def emit(command, point=None, **attributes):
+            element = etree.SubElement(path, qn(f"a:{command}"))
+            if point is not None:
+                x_emu = etree.SubElement(element, qn("a:pt"))
+                x_emu.set("x", str(int(round(point[0]))))
+                x_emu.set("y", str(int(round(point[1]))))
+            for key, value in attributes.items():
+                if isinstance(value, (int, float)):
+                    element.set(key, str(int(round(value))))
+                else:
+                    element.set(key, str(value))
+
+        limit = min(box_w, box_h) / 2.0
+        tl_x, tl_y = min(corners[0][0], limit), min(corners[0][1], limit)
+        tr_x, tr_y = min(corners[1][0], limit), min(corners[1][1], limit)
+        br_x, br_y = min(corners[2][0], limit), min(corners[2][1], limit)
+        bl_x, bl_y = min(corners[3][0], limit), min(corners[3][1], limit)
+
+        def to_emu(value):
+            return util.pt2emu(value)
+
+        emit("moveTo", point=(to_emu(tl_x), 0))
+        emit("lnTo", point=(to_emu(box_w - tr_x), 0))
+        if tr_x or tr_y:
+            emit("arcTo", wR=to_emu(tr_x), hR=to_emu(tr_y), stAng=16200000, swAng=5400000)
+        emit("lnTo", point=(to_emu(box_w), to_emu(box_h - br_y)))
+        if br_x or br_y:
+            emit("arcTo", wR=to_emu(br_x), hR=to_emu(br_y), stAng=0, swAng=5400000)
+        emit("lnTo", point=(to_emu(bl_x), to_emu(box_h)))
+        if bl_x or bl_y:
+            emit("arcTo", wR=to_emu(bl_x), hR=to_emu(bl_y), stAng=5400000, swAng=5400000)
+        emit("lnTo", point=(0, to_emu(tl_y)))
+        if tl_x or tl_y:
+            emit("arcTo", wR=to_emu(tl_x), hR=to_emu(tl_y), stAng=10800000, swAng=5400000)
+        emit("close")
+        xmlutil.ordered_insert(sp_pr, custom)
+        return shape
+
     def _container(self, box):
         style = box.style
         if style.paint:
-            shape_type = MSO_SHAPE.ROUNDED_RECTANGLE if _radius(style) else MSO_SHAPE.RECTANGLE
             x, y, width, height = box.rect
+            corners = values.resolve_radius(style.radius, width, height)
+            uneven = _corners_differ(corners)
+            if uneven:
+                # Per-corner or elliptical radii cannot be expressed by
+                # roundRect's single adjustment, so the shape is built from an
+                # explicit custom geometry instead of being silently squared off.
+                shape = self._rounded_shape(x, y, width, height, corners, _name(box))
+                self._fill(shape, style.background, width, height)
+                if style.background is not None and style.background.image:
+                    self._picture_fill(shape, style.background, width, height)
+                self._outline(shape, box)
+                if style.shadows:
+                    try:
+                        xmlutil.set_shadow(shape, style.shadows)
+                    except Exception:
+                        pass
+                self._apply_rotation(shape, style)
+                _strip_text(shape)
+                for child in box.children:
+                    self._emit(child)
+                return
+            shape_type = MSO_SHAPE.ROUNDED_RECTANGLE if corners else MSO_SHAPE.RECTANGLE
             shape = self._rect(x, y, width, height, _name(box), shape_type)
             self._fill(shape, style.background, width, height)
             if style.background is not None and style.background.image:
@@ -119,9 +198,9 @@ class SlideWriter:
                     xmlutil.set_shadow(shape, style.shadows)
                 except Exception:
                     pass
-            if style.radius and shape_type == MSO_SHAPE.ROUNDED_RECTANGLE:
+            if corners and shape_type == MSO_SHAPE.ROUNDED_RECTANGLE:
                 try:
-                    shape.adjustments[0] = min(0.5, _radius(style) / max(1.0, min(width, height)))
+                    shape.adjustments[0] = min(0.5, corners[0][0] / max(1.0, min(width, height)))
                 except (IndexError, ValueError, TypeError):
                     pass
             self._apply_rotation(shape, style)
@@ -275,6 +354,7 @@ class SlideWriter:
         frame.auto_size = MSO_AUTO_SIZE.NONE
         _no_autofit(frame)
         bullet = box.extra.get("bullet") or ""
+        autonum = box.extra.get("autonum") or ""
         for index, line in enumerate(box.lines):
             paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
             paragraph.alignment = ALIGN_MAP.get(style.text_align, PP_ALIGN.LEFT)
@@ -282,8 +362,11 @@ class SlideWriter:
             paragraph.space_before = Emu(0)
             paragraph.space_after = Emu(0)
             _clear_bullet(paragraph)
-            if bullet and index == 0:
-                _bullet(paragraph, bullet, style)
+            if index == 0:
+                if autonum:
+                    _autonum(paragraph, autonum, style, box.extra.get("bullet_start") or 1)
+                elif bullet:
+                    _bullet(paragraph, bullet, style)
             if not line.runs:
                 continue
             for text, run_style, _run_width in line.runs:
@@ -298,7 +381,13 @@ class SlideWriter:
                     color=util.with_alpha(run_style.color, util.alpha_of(run_style.color) * run_style.opacity),
                     letter_spacing=run_style.letter_spacing,
                     underline="underline" in (run_style.text_decoration or ""),
+                    strike="line-through" in (run_style.text_decoration or ""),
+                    baseline=run_style.baseline_shift,
                 )
+                if run_style.text_shadow is not None:
+                    xmlutil.set_run_shadow(run, run_style.text_shadow)
+                if run_style.font_variant_numeric in ("tabular-nums", "lining-nums", "slashed-zero"):
+                    run._r.get_or_add_rPr().set("numFmt", "tab")
         self._rotate_textbox(textbox, style)
 
     def _rotate_textbox(self, textbox, style):
@@ -552,10 +641,21 @@ def _detach_theme_style(shape):
         element.remove(style)
 
 
+def _corners_differ(corners):
+    """True when the radius cannot be expressed by one roundRect adjustment."""
+    if not corners or not any(rx or ry for rx, ry in corners):
+        return False
+    first = corners[0]
+    if any(abs(rx - first[0]) > 0.01 or abs(ry - first[1]) > 0.01 for rx, ry in corners[1:]):
+        return True
+    # Elliptical (rx != ry) corners need a custom path as well.
+    return abs(first[0] - first[1]) > 0.01
+
+
 def _radius(style):
     if not style.radius:
         return 0.0
-    return max([value for value in style.radius if value] or [0.0])
+    return max([max(rx, ry) for rx, ry in style.radius if rx or ry] or [0.0])
 
 
 def _name(box):
@@ -621,6 +721,26 @@ def _bullet(paragraph, char, style):
     font.set("typeface", "Arial")
     bullet = etree.SubElement(p_pr, qn("a:buChar"))
     bullet.set("char", char)
+
+
+def _autonum(paragraph, scheme, style, start=1):
+    """Native ordered numbering (``a:buAutoNum``), so items renumber themselves."""
+    p_pr = paragraph._p.get_or_add_pPr()
+    for element in p_pr.findall(qn("a:buNone")):
+        p_pr.remove(element)
+    indent = max(6.0, style.font_size * 0.85)
+    p_pr.set("marL", str(util.pt2emu(indent)))
+    p_pr.set("indent", str(-util.pt2emu(indent)))
+    color = etree.SubElement(p_pr, qn("a:buClr"))
+    etree.SubElement(color, qn("a:srgbClr"), val=util.to_dml(style.color))
+    size = etree.SubElement(p_pr, qn("a:buSzPct"))
+    size.set("val", "100000")
+    font = etree.SubElement(p_pr, qn("a:buFont"))
+    font.set("typeface", "Arial")
+    auto = etree.SubElement(p_pr, qn("a:buAutoNum"))
+    auto.set("type", scheme)
+    if start and start > 1:
+        auto.set("startAt", str(int(start)))
 
 
 def _set_fill_alpha(shape, alpha):

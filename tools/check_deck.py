@@ -59,7 +59,12 @@ def _slide_shapes(slide):
 
 
 def _solid_fill_of(shape):
-    """Return the flat colour a shape paints, averaging gradients, or None."""
+    """Return the flat colour a shape paints (alpha preserved), or None.
+
+    A gradient is averaged into one representative colour; a semi-transparent
+    glow keeps its alpha instead of being treated as an opaque light surface, so
+    a 14%-alpha halo behind a footer is not mistaken for a white background.
+    """
     element = shape._element
     sp_pr = element.find(qn("p:spPr"))
     if sp_pr is None:
@@ -74,11 +79,16 @@ def _solid_fill_of(shape):
             if srgb is None:
                 continue
             color = _hex(srgb.get("val"))
-            if color is not None:
-                stops.append(color)
+            if color is None:
+                continue
+            alpha = srgb.find(qn("a:alpha"))
+            value = (int(alpha.get("val")) / 100000.0) if alpha is not None else 1.0
+            stops.append((color, value))
         if stops:
-            average = [sum(stop[index] for stop in stops) / len(stops) for index in range(3)]
-            return (average[0], average[1], average[2], 1.0)
+            count = len(stops)
+            average = tuple(sum(item[0][index] for item in stops) / count for index in range(3))
+            average_alpha = sum(item[1] for item in stops) / count
+            return (average[0], average[1], average[2], average_alpha)
         return None
     fill = sp_pr.find(qn("a:solidFill"))
     if fill is None:
@@ -87,12 +97,11 @@ def _solid_fill_of(shape):
     if srgb is None:
         return None
     color = _hex(srgb.get("val"))
+    if color is None:
+        return None
     alpha = srgb.find(qn("a:alpha"))
     if alpha is not None:
-        alpha_value = int(alpha.get("val")) / 100000.0
-        if alpha_value < 0.999:
-            return None
-        color = util.with_alpha(color, alpha_value)
+        color = (color[0], color[1], color[2], int(alpha.get("val")) / 100000.0)
     return color
 
 
@@ -128,15 +137,25 @@ def _surfaces(slide, slide_background):
 
 
 def _surface_under(text_shape, surfaces):
-    """The topmost filled shape whose centre contains ``text_shape``."""
-    for candidate, color in reversed(surfaces):
-        if candidate is None:
-            return color
+    """Composite the surfaces painted beneath ``text_shape``.
+
+    Translucent shapes (glows, tinted chips) are blended over the surface below
+    them rather than replacing it, so the contrast ratio reflects what a reader
+    actually sees.
+    """
+    base = surfaces[0][1]
+    stack = []
+    for candidate, color in surfaces[1:]:
         if candidate is text_shape:
             continue
-        if _center_inside(candidate, text_shape):
-            return color
-    return surfaces[0][1]
+        if not _center_inside(candidate, text_shape):
+            continue
+        stack.append(color)
+    result = base
+    for color in stack:
+        alpha = util.alpha_of(color)
+        result = util.mix(result, color, alpha) if alpha < 0.999 else color
+    return result
 
 
 def _slide_background(slide):

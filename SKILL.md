@@ -9,7 +9,7 @@ description: >
   courseware; wants a web-page-style deck delivered as PowerPoint; or mentions
   pptpress, HTML→PPTX, or "editable slides".
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   license: "MIT"
   entrypoint: "python -m pptpress build <deck.html> -o <deck.pptx>"
 ---

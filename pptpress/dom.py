@@ -232,6 +232,10 @@ class Document:
             body = document
         self.raw_body = body
         self.raw_document = document
+        # The HTML parser lowercases every tag and attribute name, which quietly
+        # destroys SVG: <linearGradient> becomes <lineargradient> and only the PNG
+        # fallback survives. Restore the SVG names before anything reads the tree.
+        _restore_svg_case(document)
         for node in document.iter():
             if not isinstance(node.tag, str):
                 continue
@@ -274,6 +278,100 @@ class Document:
 
     def iter_elements(self):
         return self.root.iter_elements()
+
+
+def _restore_svg_case(document):
+    """Undo the HTML parser's lowercasing inside every ``<svg>`` subtree.
+
+    lxml's HTML parser normalises tag and attribute names to lowercase. SVG is
+    case-sensitive (``linearGradient``, ``clipPath``, ``viewBox``,
+    ``gradientUnits``…), so without this the vector path silently degrades to a
+    rasterised icon. Only names in the lookup tables are rewritten; anything
+    unknown is left exactly as the parser produced it.
+    """
+    for svg in document.iter():
+        if not isinstance(svg.tag, str) or svg.tag.lower() != "svg":
+            continue
+        for element in svg.iter():
+            if not isinstance(element.tag, str):
+                continue
+            fixed_tag = _SVG_TAGS.get(element.tag.lower())
+            if fixed_tag:
+                element.tag = fixed_tag
+            for name in list(element.attrib):
+                fixed = _SVG_ATTRS.get(name.lower())
+                if fixed and fixed != name:
+                    element.attrib[fixed] = element.attrib.pop(name)
+
+
+# Names that differ from their lowercase form in the SVG specification.
+_SVG_TAGS = {
+    "lineargradient": "linearGradient",
+    "radialgradient": "radialGradient",
+    "clippath": "clipPath",
+    "textpath": "textPath",
+    "fedropshadow": "feDropShadow",
+    "fegaussianblur": "feGaussianBlur",
+    "feoffset": "feOffset",
+    "feblend": "feBlend",
+    "fecolormatrix": "feColorMatrix",
+    "feflood": "feFlood",
+    "fecomposite": "feComposite",
+    "femerge": "feMerge",
+    "femergenode": "feMergeNode",
+    "feblend": "feBlend",
+    "foreignobject": "foreignObject",
+    "animatetransform": "animateTransform",
+    "animatemotion": "animateMotion",
+    "animatetransform": "animateTransform",
+    "altglyph": "altGlyph",
+    "altglyphdef": "altGlyphDef",
+    "altglyphitem": "altGlyphItem",
+    "glyphref": "glyphRef",
+    "feblend": "feBlend",
+}
+
+_SVG_ATTRS = {
+    "viewbox": "viewBox",
+    "preserveaspectratio": "preserveAspectRatio",
+    "gradientunits": "gradientUnits",
+    "gradienttransform": "gradientTransform",
+    "patternunits": "patternUnits",
+    "patterncontentunits": "patternContentUnits",
+    "patterntransform": "patternTransform",
+    "clippathunits": "clipPathUnits",
+    "maskunits": "maskUnits",
+    "maskcontentunits": "maskContentUnits",
+    "markerwidth": "markerWidth",
+    "markerheight": "markerHeight",
+    "markerunits": "markerUnits",
+    "refx": "refX",
+    "refy": "refY",
+    "startoffset": "startOffset",
+    "textlength": "textLength",
+    "lengthadjust": "lengthAdjust",
+    "pathlength": "pathLength",
+    "spreadmethod": "spreadMethod",
+    "fx": "fx",
+    "fy": "fy",
+    "stddeviation": "stdDeviation",
+    "basefrequency": "baseFrequency",
+    "numoctaves": "numOctaves",
+    "specularconstant": "specularConstant",
+    "specularexponent": "specularExponent",
+    "diffuseconstant": "diffuseConstant",
+    "surfacescale": "surfaceScale",
+    "kernelmatrix": "kernelMatrix",
+    "kernelunitlength": "kernelUnitLength",
+    "targetx": "targetX",
+    "targety": "targetY",
+    "edgemode": "edgeMode",
+    "colorinterpolationfilters": "colorInterpolationFilters",
+    "filterunits": "filterUnits",
+    "primitiveunits": "primitiveUnits",
+    "xchannelselector": "xChannelSelector",
+    "ychannelselector": "yChannelSelector",
+}
 
 
 def _read_css(href, base_dir=""):

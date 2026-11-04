@@ -10,6 +10,57 @@
 
 ---
 
+## [1.1.0] — 2026-11-05
+
+以"实测缺口"驱动的一次修复版本：先写探针确认每条缺口真的存在，再修，再把每条转成回归用例。
+测试从 10 条增至 **43 条**，四份示例在 `--strict` 下全部 0 错误 0 警告。
+
+### Fixed — 会静默出错的两个 P0
+
+* **`repeat(auto-fit, minmax(...))` 导致构建崩溃**（`AttributeError: 'NoneType'`）。
+  `parse_track_list` 现在先把 `minmax(a,b)` 归约到上界，并用**最小值**计算 auto-fit 列数。
+* **语义标签默认样式从未生效**：裸 `<h1>` 渲染成 12pt/400、`<b>` 不加粗、`<i>` 不斜体。
+  根因是 `_DEFAULT_INHERITED` 里的可继承默认值让标签兜底分支变成死代码。
+  改为注入一份**内置 UA 样式表**（`css.UA_STYLESHEET`），作者 CSS 仍在同特异性下胜出。
+
+### Fixed — 样式表达力
+
+* `grid-column: span N` 与显式 `grid-row` / `grid-column`：新增 `_place_grid_cells`，
+  支持跨度、显式定位与行优先自动排布。
+* `align-content`：网格行按 `start` / `center` / `end` / `space-between` 分布。
+* `border-radius` 四角不同或椭圆（`50% / 20%`）：生成 `custGeom` 自定义几何；
+  统一圆角仍走 `roundRect`（保持轻量）。
+* `text-decoration: line-through` → `a:rPr@strike="sngStrike"`。
+* `text-shadow` → run 级 `a:rPr/a:effectLst/a:outerShdw`，不再是形状阴影。
+* `<ol>` → 原生 `a:buAutoNum`（支持 `start` 与罗马/字母方案），项目可自动重新编号。
+* `aspect-ratio` 参与盒子高度推导。
+* `height: N%` 改为按**包含块**解析（此前误用画布高度，定高卡片内算大一倍）。
+* `transform: translateX(-50%)` 等百分比位移在布局后按自身宽高解析（居中定位可用）。
+* `<sub>` / `<sup>` → `a:rPr@baseline` 原生基线偏移。
+* SVG 标签与属性被 HTML 解析器小写化（`linearGradient` → `lineargradient`），
+  导致渐变整图退化为 PNG：新增 `dom._restore_svg_case` 还原大小写。
+* SVG `stroke-dasharray` → `a:prstDash` 预设虚线。
+* `font-variant-numeric: tabular-nums` → `a:rPr@numFmt="tab"`。
+
+### Fixed — 工具
+
+* `tools/check_deck.py` 现在会把半透明图层（光斑、浅色底片）**合成**到下层再算对比度，
+  并把渐变按色标平均后保留 alpha；此前把 14% 透明光斑当成白色背景，产生大量假警告。
+
+### Changed
+
+* 示例对比度调整：`aurora-launch` 与 `annual-review` 的页脚、引述署名提亮到 4.5:1 以上，
+  装饰光斑降到 14%–20% alpha，使 `--strict` 全绿。
+
+### Added
+
+* `tests/test_gaps.py`：14 组、33 条回归用例，逐条对应上面每个修复。
+* `docs/known-gaps.md`：改为"仍未解决"清单 + 已修复对照表。
+* `README.en.md`：英文主页；`SECURITY.md`；`.github/ISSUE_TEMPLATE/`（bug / feature）；
+  `MANIFEST.in`（sdist 带上文档、示例与截图）。
+
+---
+
 ## [1.0.0] — 2026-11-03
 
 首个公开版本。整条链路可用：HTML/CSS → 纯 Python 排版 → 原生可编辑 PPTX。

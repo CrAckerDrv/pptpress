@@ -55,11 +55,20 @@ BULLET_FOR_STYLE = {
     "circle": "◦",
     "square": "▪",
     "none": "",
-    "decimal": "1.",
-    "lower-alpha": "a.",
-    "upper-alpha": "A.",
-    "lower-roman": "i.",
-    "upper-roman": "I.",
+}
+
+# Ordered lists must stay *auto numbering* in PowerPoint, so the numbers renumber
+# themselves when a slide is edited. Mapping them to a literal "1." character
+# would freeze every item at one.
+AUTONUM_FOR_STYLE = {
+    "decimal": "arabicPeriod",
+    "decimal-leading-zero": "arabicPeriod",
+    "lower-alpha": "alphaLcPeriod",
+    "upper-alpha": "alphaUcPeriod",
+    "lower-roman": "romanLcPeriod",
+    "upper-roman": "romanUcPeriod",
+    "lower-latin": "alphaLcPeriod",
+    "upper-latin": "alphaUcPeriod",
 }
 
 
@@ -81,6 +90,8 @@ class Style:
         "grid_columns", "grid_rows", "vertical_align", "flex_grow", "align_self",
         "object_fit", "white_space", "text_decoration", "box_sizing", "text_indent",
         "list_style", "is_list", "list_indent", "paint", "top", "right", "bottom", "left",
+        "text_shadow", "baseline_shift", "object_position", "font_variant_numeric",
+        "list_start", "grid_column", "grid_row", "align_content", "aspect_ratio",
     )
 
     def __init__(self):
@@ -135,6 +146,15 @@ class Style:
         self.right = None
         self.bottom = None
         self.left = None
+        self.text_shadow = None
+        self.baseline_shift = 0.0      # >0 superscript, <0 subscript (fraction of size)
+        self.object_position = None    # (x, y) keywords or percentages for object-fit
+        self.font_variant_numeric = "normal"
+        self.list_start = 1
+        self.grid_column = (None, 1)   # (start, span); start is 1-based or None
+        self.grid_row = (None, 1)
+        self.align_content = "start"
+        self.aspect_ratio = None       # width / height
 
     # -- derived ---------------------------------------------------------
     @property
@@ -188,21 +208,16 @@ def _resolve_length(text, base_pt=None, font_size_pt=12.0):
     return length.resolve(base_pt=base_pt, font_size_pt=font_size_pt)
 
 
-class Percent(float):
-    """A percentage width/height kept as a 0..1 fraction until layout time.
-
-    Subclassing ``float`` keeps the value arithmetic-friendly while letting the
-    engine tell ``height:100%`` (a fraction) apart from ``height:1px`` (a very
-    thin line) — both would otherwise look like a number below 1.
-    """
-
-    __slots__ = ()
+# One ``Percent`` type for the whole engine: the layout module's isinstance()
+# checks and values.parse_transform() must agree, otherwise percentage
+# translates silently degrade to zero.
+Percent = values.Percent
 
 
 def _percent_of(text):
     length = values.parse_length(text)
     if length is not None and length.percent:
-        return Percent(length.value / 100.0)
+        return values.Percent(length.value / 100.0)
     return None
 
 
@@ -277,8 +292,19 @@ def build_style(node, resolver, context, parent_style=None):
     style.text_decoration = decoration.lower()
     if node.tag_name == "u":
         style.text_decoration = "underline"
+    if node.tag_name in ("sub", "sup"):
+        # Native baseline shift: PowerPoint keeps the run editable instead of
+        # faking it with a smaller font on a raised line.
+        style.baseline_shift = -0.25 if node.tag_name == "sub" else 0.30
     style.text_indent = _resolve_length(computed.get("text-indent"), 0.0, style.font_size) or 0.0
     style.vertical_align = (computed.get("vertical-align") or "top").lower()
+    numeric = (computed.get("font-variant-numeric") or "normal").lower()
+    style.font_variant_numeric = numeric
+    shadow = computed.get("text-shadow")
+    if shadow:
+        parsed = values.parse_shadow(shadow, style.font_size)
+        if parsed:
+            style.text_shadow = parsed[0]
 
     # ---- box model ----------------------------------------------------
     display = (computed.get("display") or "").strip().lower()
@@ -291,7 +317,15 @@ def build_style(node, resolver, context, parent_style=None):
     style.flex_direction = (computed.get("flex-direction") or "row").lower()
     style.justify_content = values.parse_justify_content(computed.get("justify-content"))
     style.align_items = values.parse_align_items(computed.get("align-items"))
+    style.align_content = values.parse_align_content(computed.get("align-content"))
     style.flex_wrap = (computed.get("flex-wrap") or "nowrap").lower()
+    style.grid_column = values.parse_grid_column(computed.get("grid-column"))
+    style.grid_row = values.parse_grid_column(computed.get("grid-row"))
+    ratio = values.parse_aspect_ratio(computed.get("aspect-ratio"))
+    style.aspect_ratio = ratio
+    position_raw = computed.get("object-position")
+    if position_raw:
+        style.object_position = values.parse_object_position(position_raw)
     align_self = computed.get("align-self")
     style.align_self = values.parse_align_items(align_self) if align_self else None
     style.overflow = (computed.get("overflow") or "visible").lower()
@@ -316,7 +350,7 @@ def build_style(node, resolver, context, parent_style=None):
     style.border = _border_sides(computed, style)
     radius = values.parse_radius(computed.get("border-radius"))
     if radius:
-        style.radius = [float(r) for r in radius[:4]]
+        style.radius = radius
 
     background = values.parse_background(computed.get("background") or computed.get("background-color"))
     image_raw = computed.get("background-image")
@@ -398,6 +432,7 @@ def build_style(node, resolver, context, parent_style=None):
     if node.tag_name == "li":
         style.is_list = True
         style.list_indent = 0.0
+        style.list_start = _list_start(node)
     elif parent_style is not None and getattr(parent_style, "is_list", False):
         style.list_style = parent_style.list_style
         style.is_list = True
@@ -955,7 +990,9 @@ class LayoutEngine:
             for item in items:
                 if item.kind == "block":
                     margin = item.style.margin
-                    box = self.layout_element(item.node, item.style, x, cursor, width)
+                    box = self.layout_element(
+                        item.node, item.style, x, cursor, width, content_height_base=height
+                    )
                     if box is None:
                         continue
                     boxes.append(box)
@@ -1088,7 +1125,16 @@ class LayoutEngine:
         box.lines = lines
         box.text = "".join(text for line in lines for text, _s, _w in line.runs)
         if getattr(style, "is_list", False):
-            box.extra["bullet"] = BULLET_FOR_STYLE.get((style.list_style or "disc").lower(), "•")
+            marker = (style.list_style or "disc").lower()
+            autonum = AUTONUM_FOR_STYLE.get(marker)
+            if autonum:
+                # Ordered list: let PowerPoint number the items itself. The start
+                # value is resolved while the <li> still has its <ol> parent in
+                # scope (the text box is built from an anonymous run node).
+                box.extra["autonum"] = autonum
+                box.extra["bullet_start"] = getattr(style, "list_start", 1) or 1
+            else:
+                box.extra["bullet"] = BULLET_FOR_STYLE.get(marker, "•")
         if node is not None and node.attr("data-nowrap") is not None:
             box.extra["nowrap"] = True
         return box
@@ -1100,7 +1146,8 @@ class LayoutEngine:
         return box
 
     # -- one element ------------------------------------------------------
-    def layout_element(self, node, style, x, y, available_width, fixed_height=None):
+    def layout_element(self, node, style, x, y, available_width, fixed_height=None,
+                       content_height_base=None):
         margin = style.margin
         width = style.width
         if width is None:
@@ -1123,9 +1170,15 @@ class LayoutEngine:
         explicit_height = None
         if style.height is not None:
             if isinstance(style.height, Percent):
-                explicit_height = (fixed_height or self.slide_height) * float(style.height)
+                # A percentage height resolves against the *containing block*, not
+                # the canvas: a 50% box inside a 300px card is 112.5pt, not 270pt.
+                base = fixed_height if fixed_height else (content_height_base or self.slide_height)
+                explicit_height = base * float(style.height)
             else:
                 explicit_height = style.height
+        if explicit_height is None and style.aspect_ratio:
+            # height = width / ratio, so aspect-ratio alone can size a box.
+            explicit_height = inner_width / style.aspect_ratio
         if height is None:
             height = explicit_height
         inner_height = None
@@ -1168,9 +1221,25 @@ class LayoutEngine:
             inner_width,
             max(0.0, height - style.vertical_padding - border_h),
         )
+        self._apply_translate(box)
         self._vertical_align(box)
         self._check_overflow(box)
         return box
+
+    def _apply_translate(self, box):
+        """Shift a box by its ``transform: translate()`` once its size is known.
+
+        Percentage components (``translateX(-50%)``) are resolved here because
+        they are a fraction of the element's *own* box, which only exists now.
+        """
+        transform = getattr(box.style, "transform", None) or {}
+        raw = transform.get("translate")
+        if not raw:
+            return
+        offset_x, offset_y = values.resolve_translate(transform, box.width, box.height)
+        if abs(offset_x) < 0.01 and abs(offset_y) < 0.01:
+            return
+        box.shift(offset_x, offset_y)
 
     def _vertical_align(self, box):
         """Honour vertical-align / flex justify on fixed-height containers."""
@@ -1341,45 +1410,64 @@ class LayoutEngine:
         columns = values.parse_track_list(style.grid_columns or "", size=width, gap=style.gap_col)
         if not columns:
             columns = [width]
-        rows = int(math.ceil(len(blocks) / float(len(columns))))
+        cells = _place_grid_cells(blocks, len(columns))
+        rows = max((row for row, _col, _item, _span, _rspan in cells), default=-1) + 1
+        if rows <= 0:
+            return []
 
         def column_x(index):
             return x + sum(columns[:index]) + style.gap_col * index
 
+        def span_width(index, span):
+            span = max(1, min(span, len(columns) - index)) if len(columns) > index else 1
+            total = sum(columns[index:index + span])
+            return total + style.gap_col * (span - 1)
+
         # Pass 1: measure each cell at the grid's origin to find row heights.
-        row_heights = []
+        row_heights = [0.0] * rows
+        for row, col, item, span, _rspan in cells:
+            probe = self.layout_element(
+                item.node, item.style, column_x(col), y, span_width(col, span)
+            )
+            if probe is not None:
+                row_heights[row] = max(row_heights[row], probe.height)
+
+        total_height = sum(row_heights) + style.gap_row * max(0, rows - 1)
+        offset = y
+        if height is not None and height > total_height and style.align_content != "start":
+            free = height - total_height
+            if style.align_content == "center":
+                offset += free / 2.0
+            elif style.align_content == "end":
+                offset += free
+            elif style.align_content == "space-between" and rows > 1:
+                style = _clone_style(style, gap_row=style.gap_row + free / (rows - 1))
+
+        row_offsets = []
+        cursor = offset
         for row_index in range(rows):
-            row_items = blocks[row_index * len(columns):(row_index + 1) * len(columns)]
-            tallest = 0.0
-            for column_index, item in enumerate(row_items):
-                column_width = columns[column_index] if column_index < len(columns) else columns[-1]
-                probe = self.layout_element(item.node, item.style, column_x(column_index), y, column_width)
-                if probe is not None:
-                    tallest = max(tallest, probe.height)
-            row_heights.append(tallest)
+            row_offsets.append(cursor)
+            cursor += row_heights[row_index] + style.gap_row
 
         # Pass 2: lay out again at the final row offset with the final height, so
         # children land where they are drawn (a stretched card re-centres its
         # content, a tall neighbour does not shift this cell's text).
         produced = []
-        offset = y
-        for row_index in range(rows):
-            row_items = blocks[row_index * len(columns):(row_index + 1) * len(columns)]
-            row_height = row_heights[row_index]
-            for column_index, item in enumerate(row_items):
-                column_width = columns[column_index] if column_index < len(columns) else columns[-1]
-                align = item.style.align_self or style.align_items
-                fixed_height = row_height if align == "stretch" else None
-                box = self.layout_element(
-                    item.node, item.style, column_x(column_index), offset, column_width,
-                    fixed_height=fixed_height,
-                )
-                if box is None:
-                    continue
-                if fixed_height is None:
-                    box.rect = (box.rect[0], box.rect[1], box.rect[2], max(box.height, row_height))
-                produced.append(box)
-            offset += row_height + style.gap_row
+        for row, col, item, span, rspan in cells:
+            row_height = sum(row_heights[row:row + rspan])
+            row_height += style.gap_row * max(0, rspan - 1)
+            align = item.style.align_self or style.align_items
+            fixed_height = row_height if align == "stretch" else None
+            box = self.layout_element(
+                item.node, item.style, column_x(col), row_offsets[row],
+                span_width(col, span), fixed_height=fixed_height,
+                content_height_base=height,
+            )
+            if box is None:
+                continue
+            if fixed_height is None and rspan == 1:
+                box.rect = (box.rect[0], box.rect[1], box.rect[2], max(box.height, row_height))
+            produced.append(box)
         return produced
 
     # -- absolute ---------------------------------------------------------
@@ -1603,12 +1691,96 @@ def _opaque_color(background):
     return background.color
 
 
+def _place_grid_cells(blocks, column_count):
+    """Resolve grid placement into ``(row, column, item, colspan, rowspan)``.
+
+    Explicit ``grid-column: 2`` / ``grid-row: 1`` / ``span N`` are honoured, then
+    the remaining items fill the first free cell in source order (CSS auto
+    placement, row-major).
+    """
+    taken = {}
+    placed = []
+    pending = []
+    for item in blocks:
+        start, span = getattr(item.style, "grid_column", (None, 1))
+        row_start, rowspan = getattr(item.style, "grid_row", (None, 1))
+        if start is None and row_start is None:
+            pending.append((item, span, rowspan))
+            continue
+        row = (row_start - 1) if row_start else 0
+        column = (start - 1) if start else 0
+        if start is None:
+            while any((row, column + offset) in taken for offset in range(span)):
+                column += 1
+        while True:
+            clash = False
+            for row_offset in range(rowspan):
+                for column_offset in range(span):
+                    if (row + row_offset, column + column_offset) in taken:
+                        clash = True
+            if not clash:
+                break
+            if start is None:
+                column += 1
+            else:
+                row += 1
+        for row_offset in range(rowspan):
+            for column_offset in range(span):
+                taken[(row + row_offset, column + column_offset)] = item
+        placed.append((row, column, item, span, rowspan))
+
+    row = 0
+    column = 0
+    for item, span, rowspan in pending:
+        while True:
+            if column + span > column_count:
+                row += 1
+                column = 0
+                continue
+            clash = any(
+                (row + row_offset, column + column_offset) in taken
+                for row_offset in range(rowspan)
+                for column_offset in range(span)
+            )
+            if not clash:
+                break
+            column += 1
+        for row_offset in range(rowspan):
+            for column_offset in range(span):
+                taken[(row + row_offset, column + column_offset)] = item
+        placed.append((row, column, item, span, rowspan))
+        column += span
+
+    placed.sort(key=lambda entry: (entry[0], entry[1]))
+    return placed
+
+
 def _colspan(cell):
     raw = cell.attr("colspan") or "1"
     try:
         return max(1, int(raw))
     except ValueError:
         return 1
+
+
+def _list_start(node):
+    """``<ol start="5">`` -> 5; anything else -> 1.
+
+    The ``start`` attribute lives on the list element, not on the ``<li>`` that
+    carries the bullet, so walk up until a list is found.
+    """
+    current = node
+    depth = 0
+    while current is not None and depth < 4:
+        if getattr(current, "tag_name", None) in ("ol", "ul"):
+            raw = current.attr("start")
+            try:
+                return max(0, int(raw)) if raw else 1
+            except (TypeError, ValueError):
+                return 1
+        current = getattr(current, "parent_node", None)
+        depth += 1
+    return 1
 
 
 def _clone_style(style, **overrides):

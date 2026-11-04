@@ -248,16 +248,45 @@ def clear_effects(shape):
     shape.shadow.inherit = False
 
 
+def set_run_shadow(run, shadow):
+    """Attach an outer shadow to a single text run (``a:rPr/a:effectLst``).
+
+    DrawingML allows an effect list on run properties, which is the only way a
+    text shadow stays a *text* property instead of becoming a shape shadow.
+    """
+    import math
+
+    r_pr = run._r.get_or_add_rPr()
+    for effect in r_pr.findall(qn("a:effectLst")):
+        r_pr.remove(effect)
+    effect_lst = etree.SubElement(r_pr, qn("a:effectLst"))
+    shdw = etree.SubElement(effect_lst, qn("a:outerShdw"))
+    distance = (shadow.get("x", 0.0) ** 2 + shadow.get("y", 0.0) ** 2) ** 0.5
+    angle = 0.0
+    if distance:
+        angle = math.degrees(math.atan2(-shadow.get("y", 0.0), shadow.get("x", 0.0))) % 360.0
+    shdw.set("blurRad", str(util.pt2emu(shadow.get("blur", 0.0))))
+    shdw.set("dist", str(util.pt2emu(distance)))
+    shdw.set("dir", str(int(round(angle * 60000))))
+    shdw.set("algn", "ctr")
+    shdw.set("rotWithShape", "0")
+    shdw.append(color_element(shadow.get("color", (0, 0, 0, 0.5))))
+
+
 # --------------------------------------------------------------------------
 # text
 # --------------------------------------------------------------------------
 def set_run_font(run, family, size_pt, bold=False, italic=False, color=None,
-                 letter_spacing=0.0, underline=False, baseline=None):
+                 letter_spacing=0.0, underline=False, baseline=None, strike=False,
+                 only_bold_italic=False):
     run.font.size = util.pt2emu(size_pt)
     run.font.bold = bool(bold)
     run.font.italic = bool(italic)
     if underline:
         run.font.underline = True
+    if strike:
+        # ``a:rPr@strike`` is a plain attribute, not a child element.
+        run._r.get_or_add_rPr().set("strike", "sngStrike")
     if color is not None:
         run.font.color.rgb = _rgb(color)
         alpha = util.alpha_of(color)

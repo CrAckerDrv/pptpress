@@ -36,28 +36,29 @@
 
 ---
 
-## 阶段二 · CSS 覆盖补齐（P0）
+## 阶段二 · CSS 覆盖补齐（P1）
 
 按"常见页面实际用得上"排序，不做长尾。
 逐项现状来自实测（见 [`known-gaps.md`](known-gaps.md)），已完成项不再列入。
 
 | 属性 | 现状 | 计划 |
 |---|---|---|
-| `aspect-ratio` | 未解析，高度回落为 0 | 参与盒子高度推导 |
-| `align-content` | 忽略，grid 行永远贴顶 | 多行对齐 |
-| `grid-column: span N` / 显式 `grid-row` | 忽略，按 DOM 顺序逐格填 | 轨道跨度与显式定位 |
-| `text-decoration: line-through` | 解析了但写出时只看 `underline` | 原生删除线 |
-| `text-shadow` | 解析了但只写形状阴影 | run 级 `effectLst` |
-| `<ol>` 序号 | 输出圆点 `buChar` | `buAutoNum` |
-| `border-radius` 四角不同 / 椭圆 | 只取最大半径 | 自定义几何 |
-| `transform: translateX(-50%)` | 只支持 `rotate` | 让居中定位可用 |
-| `height: N%` 在定高父容器内 | 按画布而非父容器解析（算错） | 修正百分比基准 |
-| `font-variant-numeric` | 无槽位 | 数字等宽（表格刚需） |
+| `::before` / `::after` 内容 | 匹配得到但内容不生成 | 徽章、编号、引号装饰需要它 |
+| `calc()` / `clamp()` | 未解析，静默回落 | 简单算术即可覆盖多数用法 |
 | `writing-mode` | 无槽位 | 竖排（海报/竖版场景） |
-| `::before` / `::after` 内容 | 匹配得到但内容不生成 | 伪元素生成 |
-| `calc()` / `clamp()` | 未解析 | 简单算术 |
+| `conic-gradient` | 丢弃 | 饼图式底色 |
+| `background-size: contain` + 位置 | 解析了但图片填充未使用 | 完整 `object-fit` 语义 |
+| 多背景层 | 只取第一层 | 叠加纹理 |
+| `filter` / `clip-path` | 无原生对应 | 列入"明确不做" |
 
-已完成、无需再排期：`row-gap`/`column-gap` 分离、`border-style: dashed/dotted`
+**1.1.0 已完成**（回归用例见 `tests/test_gaps.py`）：
+`repeat(auto-fit,minmax())` 崩溃、语义标签默认样式、`grid-column: span N`、
+显式 `grid-row`、`align-content`、四角/椭圆 `border-radius`、
+`text-decoration: line-through`、`text-shadow`（run 级）、`<ol>` 原生编号、
+`aspect-ratio`、百分比高度基准、`transform: translateX(-50%)`、
+SVG 标签大小写、SVG `stroke-dasharray`、`<sub>`/`<sup>` 基线。
+
+更早已完成：`row-gap`/`column-gap` 分离、`border-style: dashed/dotted`
 （→ `a:prstDash`）、`text-align: justify`、负 `letter-spacing`、逐边边框、
 `box-shadow`、`linear-gradient`、`transform: rotate()`、逐格边框的表格、
 `rem`/`em`/`%`/`vw`/`vh` 字号。
@@ -130,9 +131,11 @@
 
 | 版本 | 内容 |
 |---|---|
-| 1.0（当前） | HTML/CSS → 原生可编辑 PPTX，4 份示例，校验工具链 |
-| 1.1 | 原生图表（阶段一）+ gap 分离与 aspect-ratio（阶段二前两项） |
-| 1.2 | 并行构建 + XML 直写（阶段三） |
+| 1.0 | HTML/CSS → 原生可编辑 PPTX，4 份示例，校验工具链 |
+| **1.1（当前）** | 修复 2 个 P0（`auto-fit` 崩溃、语义标签默认样式）+ 14 项样式缺口（grid 跨度/`align-content`/四角圆角/删除线/文本阴影/原生 `<ol>` 编号/`aspect-ratio`/百分比高度/`translateX(-50%)`/SVG 大小写与虚线/`sub`/`sup`），测试 10 → 43 |
+| 1.2 | `::before`/`::after`、`calc()`/`clamp()`、表格 `rowspan` |
+| 1.3 | 原生图表对象（阶段一） |
+| 1.4 | 并行构建 + XML 直写（阶段三） |
 | 2.0 | PPTX 导入（阶段四）；到此具备"往返"能力 |
 | 2.x | 视觉能力与生态（阶段五、六） |
 

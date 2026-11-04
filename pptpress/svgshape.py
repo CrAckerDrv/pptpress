@@ -42,7 +42,7 @@ class SvgShape:
     """One painted SVG primitive in viewBox coordinates."""
 
     __slots__ = ("commands", "closed", "fill", "stroke", "stroke_width", "opacity",
-                 "linecap", "gradient", "tag", "rx", "ry", "x", "y", "w", "h")
+                 "linecap", "gradient", "tag", "rx", "ry", "x", "y", "w", "h", "dash")
 
     def __init__(self):
         self.commands = []      # [("M", (x, y)), ("L", (x, y)), ("C", (x1,y1,x2,y2,x,y)), ("Z", ())]
@@ -57,6 +57,7 @@ class SvgShape:
         self.rx = 0.0
         self.ry = 0.0
         self.x = self.y = self.w = self.h = 0.0
+        self.dash = None        # stroke-dasharray, in viewBox units
 
 
 class SvgDocument:
@@ -124,7 +125,8 @@ def _inherited(element, inherited):
     if current is not None:
         own["color"] = current
     for key in ("fill", "stroke", "stroke-width", "opacity", "fill-opacity",
-                "stroke-opacity", "stroke-linecap", "stroke-linejoin"):
+                "stroke-opacity", "stroke-linecap", "stroke-linejoin",
+                "stroke-dasharray"):
         value = _attr(element, style, key)
         if value is not None:
             own[key] = value
@@ -359,6 +361,25 @@ def _transform_text(label, transform):
     label.size *= transform.scale_factor()
 
 
+def _parse_dash(raw):
+    """``"12 8"`` / ``"12,8"`` / ``"8"`` -> a list of dash lengths (or ``None``)."""
+    if not raw or raw.strip().lower() in ("none", ""):
+        return None
+    parts = [p for p in re.split(r"[\s,]+", raw.strip()) if p]
+    values = []
+    for part in parts:
+        try:
+            values.append(float(part))
+        except ValueError:
+            return None
+    if not values or not any(value > 0 for value in values):
+        return None
+    # An odd number of values repeats to produce an even pair (SVG spec).
+    if len(values) % 2:
+        values = values * 2
+    return values
+
+
 def _make_shape(tag, element, gradients, inherited):
     fill_raw = inherited.get("fill", "#000000")
     stroke_raw = inherited.get("stroke", "none")
@@ -385,6 +406,7 @@ def _make_shape(tag, element, gradients, inherited):
         stroke = util.with_alpha(stroke, util.alpha_of(stroke) * stroke_opacity)
     shape.stroke = stroke
     shape.stroke_width = _number(inherited.get("stroke-width"), 0.0)
+    shape.dash = _parse_dash(inherited.get("stroke-dasharray"))
 
     if tag == "rect":
         x = _number(element.get("x"))
@@ -960,8 +982,40 @@ def _apply_paint(element, shape, scale):
         stroke_alpha = util.alpha_of(shape.stroke) * opacity
         if stroke_alpha < 0.999:
             _line_alpha(element, stroke_alpha)
+        _apply_dash(element, getattr(shape, "dash", None))
     else:
         xmlutil.no_line(element)
+
+
+def _apply_dash(element, dash):
+    """Map ``stroke-dasharray`` onto the native preset dash closest to it."""
+    from lxml import etree as lxml_etree
+    from pptx.oxml.ns import qn
+
+    if not dash or not any(dash):
+        return
+    pattern = [value for value in dash if value > 0]
+    if not pattern:
+        return
+    # DrawingML only offers presets; pick by how dense the dash pattern is.
+    ratio = (sum(pattern) / len(pattern)) / max(0.01, pattern[0])
+    shortest = min(pattern)
+    if shortest <= 1.2:
+        preset = "sysDot"
+    elif ratio >= 3.0:
+        preset = "lgDash"
+    elif ratio >= 1.8:
+        preset = "dash"
+    else:
+        preset = "sysDash"
+    ln = element._element.spPr.find(qn("a:ln"))
+    if ln is None:
+        return
+    for existing in ln.findall(qn("a:prstDash")):
+        ln.remove(existing)
+    # a:prstDash must follow the fill element inside a:ln.
+    dash_element = lxml_etree.SubElement(ln, qn("a:prstDash"))
+    dash_element.set("val", preset)
 
 
 def _line_alpha(element, alpha):

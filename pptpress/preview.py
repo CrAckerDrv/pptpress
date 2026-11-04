@@ -10,7 +10,7 @@ import html
 import math
 import os
 
-from . import util
+from . import util, values
 
 _FONT_STACK = "Inter, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', 'Source Han Sans SC', Arial, sans-serif"
 
@@ -104,12 +104,12 @@ class SvgWriter:
     def _clip(self, x, y, width, height, radius=None):
         self.clip_id += 1
         ident = f"clip{self.clip_id}"
-        if radius:
-            rx, _ry = radius[0], radius[1]
-            self.defs.append(
-                f'<clipPath id="{ident}"><rect x="{x:.2f}" y="{y:.2f}" width="{width:.2f}" '
-                f'height="{height:.2f}" rx="{rx:.2f}"/></clipPath>'
-            )
+        corners = values.resolve_radius(radius, width, height) if radius else None
+        if corners and any(rx or ry for rx, ry in corners):
+            # Preview the real corner shape, not just the largest radius: the
+            # preview exists to show what the PPTX will contain.
+            path = _rounded_path(x, y, width, height, corners)
+            self.defs.append(f'<clipPath id="{ident}"><path d="{path}"/></clipPath>')
         else:
             self.defs.append(
                 f'<clipPath id="{ident}"><rect x="{x:.2f}" y="{y:.2f}" width="{width:.2f}" '
@@ -117,12 +117,14 @@ class SvgWriter:
             )
         return ident
 
-    def _radius_attr(self, style):
-        if not style.radius:
+    def _radius_attr(self, style, width=0.0, height=0.0):
+        corners = values.resolve_radius(style.radius, width or 1.0, height or 1.0)
+        if not corners or not any(rx or ry for rx, ry in corners):
             return ""
-        raw = style.radius
-        radius = min(max(raw[0], raw[1]), max(raw[0], raw[3]))
-        return f' rx="{radius:.2f}"'
+        first = corners[0]
+        if all(abs(rx - first[0]) < 0.01 and abs(ry - first[1]) < 0.01 for rx, ry in corners):
+            return f' rx="{first[0]:.2f}" ry="{first[1]:.2f}"'
+        return ""
 
     def _emit(self, box, depth):
         if box.width <= 0 or box.height <= 0:
@@ -144,7 +146,8 @@ class SvgWriter:
         opacity = ""
         if style.opacity < 0.999:
             opacity = f' opacity="{style.opacity:.3f}"'
-        return f'x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}"{self._radius_attr(style)}{opacity}'
+        return (f'x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}"'
+                f'{self._radius_attr(style, w, h)}{opacity}')
 
     def _emit_block(self, box, depth):
         style = box.style
@@ -308,6 +311,31 @@ def _table_runs(cell, style):
             continue
         runs.append((str(text), style))
     return runs
+
+
+def _rounded_path(x, y, width, height, corners):
+    """SVG path for a rect with four independent elliptical corners."""
+    limit = min(width, height) / 2.0
+    tl_x, tl_y = min(corners[0][0], limit), min(corners[0][1], limit)
+    tr_x, tr_y = min(corners[1][0], limit), min(corners[1][1], limit)
+    br_x, br_y = min(corners[2][0], limit), min(corners[2][1], limit)
+    bl_x, bl_y = min(corners[3][0], limit), min(corners[3][1], limit)
+    right = x + width
+    bottom = y + height
+    parts = [f"M{x + tl_x:.2f},{y:.2f}", f"L{right - tr_x:.2f},{y:.2f}"]
+    if tr_x or tr_y:
+        parts.append(f"A{tr_x:.2f},{tr_y:.2f} 0 0 1 {right:.2f},{y + tr_y:.2f}")
+    parts.append(f"L{right:.2f},{bottom - br_y:.2f}")
+    if br_x or br_y:
+        parts.append(f"A{br_x:.2f},{br_y:.2f} 0 0 1 {right - br_x:.2f},{bottom:.2f}")
+    parts.append(f"L{x + bl_x:.2f},{bottom:.2f}")
+    if bl_x or bl_y:
+        parts.append(f"A{bl_x:.2f},{bl_y:.2f} 0 0 1 {x:.2f},{bottom - bl_y:.2f}")
+    parts.append(f"L{x:.2f},{y + tl_y:.2f}")
+    if tl_x or tl_y:
+        parts.append(f"A{tl_x:.2f},{tl_y:.2f} 0 0 1 {x + tl_x:.2f},{y:.2f}")
+    parts.append("Z")
+    return " ".join(parts)
 
 
 def _border_lines(box):

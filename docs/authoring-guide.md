@@ -36,26 +36,32 @@ is not listed here, it is silently dropped rather than rendered as a picture.
 
 | HTML / CSS | PowerPoint object | Editable |
 |---|---|---|
-| `div`, `section`, painted box | Autoshape (rect / rounded rect) with fill, border, shadow | Yes — colour, corner, border |
+| `div`, `section`, painted box | Autoshape (rect / rounded rect / custom path) with fill, border, shadow | Yes — colour, corner, border |
 | `h1`…`h6`, `p`, `li`, `blockquote` | Text box, one **paragraph per laid-out line** | Yes — text, font, size, colour |
-| `<b> <i> <u> <span style>` | Runs inside the paragraph | Yes — but `<b>`/`<i>` need an explicit `font-weight`/`font-style` (see below) |
-| `ul` / `ol` → `li` | Paragraph with a native bullet (`buChar`) | Yes — bullet style |
+| `<b> <i> <u> <s> <sub> <sup> <small>` | Runs inside the paragraph | Yes — each run independently |
+| `ul` / `ol` → `li` | Native bullets (`buChar`) / native numbering (`buAutoNum`) | Yes — bullet and scheme |
 | `img` | Picture with `object-fit` crop | Yes — replace, crop, recolour |
 | inline `<svg>` | **Native vector shapes** (custom geometry) | Yes — can be recoloured |
 | `table` | PowerPoint table with merged cells and per-cell borders | Yes — edit cells live |
 | `background` | Slide background / full-bleed shape | Yes |
 | `box-shadow` | Native outer shadow | Yes |
+| `text-shadow` | Native shadow **on the run** | Yes |
 | `linear-gradient` | Native gradient fill | Yes |
 | `radial-gradient` | Native gradient fill, approximated as a linear ramp | Yes — colour stops only |
-| `transform: rotate()` | Shape rotation | Yes |
+| `border-radius` (per corner / `50%`) | Custom geometry (`custGeom`) | Yes |
+| `border-style: dashed / dotted` | Native `a:prstDash` | Yes |
+| `text-decoration: underline / line-through` | Native `a:rPr@u` / `@strike` | Yes |
+| `transform: rotate()` / `translate()` | Shape rotation / offset | Yes |
 
 > **Two rules that save an afternoon:**
 >
-> 1. **Always set `font-size` and `font-weight` explicitly.** A bare `<h1>` currently
->    renders at 12 pt / 400, and `<b>` without CSS is not bold — the semantic defaults
->    are not applied. Measured and tracked in [`known-gaps.md`](known-gaps.md).
-> 2. **Keep SVG tag names in their real case** (`linearGradient`, `viewBox`). The HTML
->    parser lowercases them, which silently turns a gradient SVG into a PNG.
+> 1. **Semantic defaults now work** (`h1` = 32pt/700, `<b>` is bold, `<i>` is
+>    italic) via a built-in UA stylesheet, and your own rules still win. Still,
+>    write the sizes you mean — an explicit `h1{font-size:52px}` is what makes a
+>    deck look designed rather than defaulted.
+> 2. **Keep SVG tag names in their real case** (`linearGradient`, `viewBox`).
+>    Since 1.1.0 the HTML parser's lowercasing is repaired automatically, but
+>    writing them correctly keeps the source readable and portable.
 
 Never produce a full-page picture: the exporter rasterises *nothing* except
 SVG icons that use filters, masks, clip-paths or text.
@@ -112,8 +118,10 @@ h1     { font-size:52px; line-height:1.1; letter-spacing:-1px; }
 
 * Font sizes are in **px** like the web; they are converted to points on export.
   `pt`, `rem`, `em`, `%`, `vw`, `vh` also resolve (2 vw → 19.2 pt on a 16:9 canvas).
-* **Write sizes and weights yourself** — `h1{font-size:52px;font-weight:700}`,
-  `b{font-weight:700}`, `i{font-style:italic}`. Tag defaults are not applied yet.
+* Tag defaults come from a built-in UA stylesheet: `h1` = 32pt/700, `h2` = 24pt/700,
+  `b`/`strong` = 700, `i`/`em` = italic, `small` = 0.85em. Author rules override
+  them at equal specificity, so a project stylesheet always wins.
+  Write the sizes you mean anyway — that is what makes a deck look designed.
 * The **first installed family** of the stack is written into the PPTX, so the
   measurement font and the file's font are always the same. Put a real fallback
   in every stack (`'Inter','Segoe UI','Microsoft YaHei',sans-serif`).

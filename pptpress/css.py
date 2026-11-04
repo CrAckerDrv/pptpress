@@ -38,6 +38,28 @@ _SHORTHAND_ALIASES = {
     "grid-gap": ("row-gap", "column-gap"),
 }
 
+# The browser-equivalent defaults. They must live in the cascade rather than in
+# Python fallbacks: ``font-size``/``font-weight``/``font-style`` are inheritable,
+# so ``_DEFAULT_INHERITED`` always supplies a value and any ``computed.get(...)``
+# fallback is dead code. Author rules are appended after this sheet and win at
+# equal specificity, which is exactly how a real UA sheet behaves.
+UA_STYLESHEET = """
+h1{font-size:32pt;font-weight:700}
+h2{font-size:24pt;font-weight:700}
+h3{font-size:19pt;font-weight:600}
+h4{font-size:16pt;font-weight:600}
+h5{font-size:14pt;font-weight:600}
+h6{font-size:12pt;font-weight:600}
+b,strong,th{font-weight:700}
+i,em,cite,dfn{font-style:italic}
+small{font-size:0.85em}
+s,del{text-decoration:line-through}
+u,ins{text-decoration:underline}
+ol{list-style-type:decimal}
+ul{list-style-type:disc}
+sub,sup{font-size:0.75em}
+"""
+
 
 class Compound:
     __slots__ = ("tag", "ids", "classes", "attrs", "pseudos", "not_selectors")
@@ -588,6 +610,8 @@ def parse_inline_style(text):
 
 def parse_stylesheets(document):
     sheet = StyleSheet()
+    # UA defaults first: author rules come later and win ties by source order.
+    sheet.add_css_text(UA_STYLESHEET)
     for node in document.style_texts:
         sheet.add_css_text(node)
     return sheet
