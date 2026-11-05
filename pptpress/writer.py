@@ -58,25 +58,6 @@ class SlideWriter:
         self._write_motion()
         return self.slide
 
-    def _record_animation(self, box, own_ids, subtree_ids):
-        """Collect ``data-anim`` declarations for the shapes just emitted.
-
-        A box that paints its own shape (a card, a chip) animates that shape. A
-        box that only groups children — an ``<li>``, a bare ``<div>`` wrapper —
-        animates everything its subtree produced, which is what "animate this
-        list item" means to whoever wrote the markup.
-        """
-        spec = animate.parse_spec(getattr(box, "node", None), order=len(self.animations))
-        if spec is None:
-            return
-        targets = [i for i in own_ids if i not in self._claimed]
-        if not targets:
-            targets = [i for i in subtree_ids if i not in self._claimed]
-        if not targets:
-            return
-        self._claimed.update(targets)
-        self.animations.append((spec, targets))
-
     def _write_motion(self):
         """Write the slide transition and, if any, the animation timeline."""
         node = getattr(self.box, "node", None)
@@ -88,7 +69,6 @@ class SlideWriter:
                 )
         if self.animations:
             animate.build_timing(self.slide, self.animations)
-
 
     def _background(self):
         background = self.box.background

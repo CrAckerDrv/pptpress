@@ -29,11 +29,13 @@ On any element (``<div data-anim="fade-up" data-anim-delay="0.3">``):
 
 from __future__ import annotations
 
-import math
 from lxml import etree
 from pptx.oxml.ns import qn
 
-__all__ = ["EFFECTS", "TRANSITIONS", "parse_spec", "build_timing", "set_transition"]
+__all__ = [
+    "EFFECTS", "TRANSITIONS", "DEFAULT_DURATION",
+    "parse_spec", "parse_stagger", "build_timing", "set_transition",
+]
 
 # --------------------------------------------------------------------------
 # effect grammar
@@ -212,17 +214,6 @@ def _attr_names(parent, names):
         etree.SubElement(holder, qn("p:attrName")).text = name
 
 
-def _behaviour(parent, ids, shape_id, duration_ms, attributes=None):
-    behaviour = etree.SubElement(parent, qn("p:cBhvr"))
-    if attributes:
-        for key, value in attributes.items():
-            behaviour.set(key, str(value))
-    timing = _ctn(behaviour, ids, dur=str(int(round(duration_ms))), fill="hold")
-    _st_cond(timing, 0)
-    _target(behaviour, shape_id)
-    return behaviour
-
-
 def _visibility_set(parent, ids, shape_id, visible):
     element = etree.SubElement(parent, qn("p:set"))
     behaviour = etree.SubElement(element, qn("p:cBhvr"))
@@ -271,9 +262,6 @@ def _rotate(parent, ids, shape_id, duration_ms, degrees):
     behaviour = etree.SubElement(element, qn("p:cBhvr"))
     _ctn(behaviour, ids, dur=str(int(round(duration_ms))), fill="hold")
     _target(behaviour, shape_id)
-
-
-_PIXEL = 1.0 / 540.0  # one 720p-ish pixel as a fraction of slide height
 
 
 def _movement(effect):
@@ -374,7 +362,7 @@ def _group(entries, anims):
     return groups
 
 
-def build_timing(slide, entries, trigger_sequence=True):
+def build_timing(slide, entries):
     """Append a ``p:timing`` element to ``slide``.
 
     ``entries`` is a list of ``(anim, [shape_id, …])`` in document order.
