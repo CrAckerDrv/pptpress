@@ -184,7 +184,38 @@ are preserved. The table stays a table: filled numbers remain editable.
 
 ---
 
-## 8. The build contract
+## 8. Motion
+
+Native PowerPoint animation, declared in HTML. Full reference:
+[`motion.md`](motion.md).
+
+```html
+<section class="slide" data-transition="push-left">
+  <div class="grid2" data-anim="fade-up" data-anim-stagger="0.12">
+    <div class="card">…</div>
+    <div class="card">…</div>
+  </div>
+</section>
+```
+
+* `data-transition` (`fade` / `push-left` / `wipe` / `cut` …) — how the page enters.
+* `data-anim` (`fade-up` / `fly-left` / `zoom` / `pulse` …) — how an element enters.
+* `data-anim-stagger` — one click, children appear in sequence.
+* `data-anim-trigger` (`click` / `with` / `after`) — the presenter's click rhythm.
+
+The written XML is the same `p:timing` tree PowerPoint's Animation Pane edits, so
+every effect stays retimable in the delivered file. A slide without motion
+declarations gets no `p:timing` element at all.
+
+`tools/check_deck.py` reports the totals:
+
+```
+motion: 16 transitions, 15 animated slides, 249 effects, 13 clicks
+```
+
+---
+
+## 9. The build contract
 
 1. **Page job first.** Write one sentence: what can the reader do after this
    page? If you cannot, the page is not ready.
@@ -199,7 +230,7 @@ are preserved. The table stays a table: filled numbers remain editable.
 
 ---
 
-## 9. Quick recipes
+## 10. Quick recipes
 
 **Cover with bleed and a chip**
 
@@ -238,3 +269,21 @@ are preserved. The table stays a table: filled numbers remain editable.
              background:linear-gradient(90deg,#8B7CFF,#4DE3D0); }
 ```
 (The fill width is a real, editable rectangle — a designer can still adjust it.)
+
+**Cascading cards on one click**
+
+```html
+<div class="cards" data-anim="fade-up" data-anim-stagger="0.12">
+  <div class="card">一</div>
+  <div class="card">二</div>
+  <div class="card">三</div>
+</div>
+```
+
+**Title first, body after**
+
+```html
+<div class="head" data-anim="fade-up" data-anim-delay="0.1">…</div>
+<div class="grid2" data-anim="fade-up" data-anim-stagger="0.12">…</div>
+```
+Two clicks: the title block, then the grid cascades.

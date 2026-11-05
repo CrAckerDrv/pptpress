@@ -22,7 +22,7 @@ from pptx.enum.text import MSO_ANCHOR, MSO_AUTO_SIZE, PP_ALIGN
 from pptx.oxml.ns import qn
 from pptx.util import Emu
 
-from . import svgicon, svgshape, util, values, xmlutil
+from . import animate, svgicon, svgshape, util, values, xmlutil
 
 DASH_MAP = {"dashed": "dash", "dotted": "sysDot", "dashdot": "dashDot"}
 BULLET_CHARS = {"disc": "•", "circle": "◦", "square": "▪", "none": ""}
@@ -44,6 +44,9 @@ class SlideWriter:
         self.slide = presentation.slides.add_slide(presentation.slide_layouts[6])
         self.issues = []
         self.count = 0
+        self.animations = []   # [(Anim, [shape_id, …])] in document order
+        self._claimed = set()  # shape ids already owned by an animation
+        self._frames = []      # per-_emit shape bookkeeping (own vs subtree)
 
     # -- entry -----------------------------------------------------------
     def write(self):
@@ -52,7 +55,40 @@ class SlideWriter:
             self._emit(box)
         if self.box.speaker_notes:
             self.slide.notes_slide.notes_text_frame.text = self.box.speaker_notes
+        self._write_motion()
         return self.slide
+
+    def _record_animation(self, box, own_ids, subtree_ids):
+        """Collect ``data-anim`` declarations for the shapes just emitted.
+
+        A box that paints its own shape (a card, a chip) animates that shape. A
+        box that only groups children — an ``<li>``, a bare ``<div>`` wrapper —
+        animates everything its subtree produced, which is what "animate this
+        list item" means to whoever wrote the markup.
+        """
+        spec = animate.parse_spec(getattr(box, "node", None), order=len(self.animations))
+        if spec is None:
+            return
+        targets = [i for i in own_ids if i not in self._claimed]
+        if not targets:
+            targets = [i for i in subtree_ids if i not in self._claimed]
+        if not targets:
+            return
+        self._claimed.update(targets)
+        self.animations.append((spec, targets))
+
+    def _write_motion(self):
+        """Write the slide transition and, if any, the animation timeline."""
+        node = getattr(self.box, "node", None)
+        if node is not None:
+            transition = node.attr("data-transition")
+            if transition:
+                animate.set_transition(
+                    self.slide, transition, speed=node.attr("data-transition-speed"),
+                )
+        if self.animations:
+            animate.build_timing(self.slide, self.animations)
+
 
     def _background(self):
         background = self.box.background
@@ -78,16 +114,80 @@ class SlideWriter:
     def _emit(self, box):
         if box.width <= 0.2 or box.height <= 0.2:
             return
-        if box.kind == "text":
-            self._text(box)
-        elif box.kind == "image":
-            self._picture(box)
-        elif box.kind == "svg":
-            self._icon(box)
-        elif box.kind == "table":
-            self._table(box)
-        else:
-            self._container(box)
+        frame = {"own": [], "all": [], "kids": []}
+        self._frames.append(frame)
+        try:
+            if box.kind == "text":
+                self._text(box)
+            elif box.kind == "image":
+                self._picture(box)
+            elif box.kind == "svg":
+                self._icon(box)
+            elif box.kind == "table":
+                self._table(box)
+            else:
+                self._container(box)
+        finally:
+            self._frames.pop()
+
+        node = getattr(box, "node", None)
+        spec = animate.parse_spec(node, order=len(self.animations))
+        if spec is not None:
+            stagger = animate.parse_stagger(node)
+            steps = _stagger_steps(frame, stagger, self._claimed) if stagger else []
+            if steps:
+                self._stagger(spec, steps, stagger)
+            else:
+                # A box is a *visual unit*: its own painted shape plus every shape
+                # its children produced. Animating only the panel would leave the
+                # card's label floating on screen while the panel fades in.
+                fresh = _collect(frame, self._claimed)
+                if fresh:
+                    self._claimed.update(fresh)
+                    self.animations.append((spec, fresh))
+        if self._frames:
+            # ``_frames[-1]`` is the direct parent (this frame was popped above).
+            # Bubbling only one level keeps each descendant counted exactly once
+            # per ancestor instead of once per level of nesting.
+            parent = self._frames[-1]
+            parent["all"].extend(frame["own"])
+            parent["all"].extend(frame["all"])
+            parent["kids"].append(frame)
+
+    def _stagger(self, spec, steps, stagger):
+        """One effect per child, each starting ``stagger`` seconds later."""
+        shared_group = spec.group if spec.group is not None else spec.order
+        for step, ids in enumerate(steps):
+            fresh = [i for i in ids if i not in self._claimed]
+            if not fresh:
+                continue
+            self._claimed.update(fresh)
+            anim = animate.Anim(
+                spec.effect,
+                delay=spec.delay + step * stagger,
+                duration=spec.duration,
+                group=shared_group,
+                trigger=spec.trigger if step == 0 else "with",
+                order=len(self.animations),
+            )
+            self.animations.append((anim, fresh))
+
+    def _track(self, element):
+        """Remember that the shape just produced belongs to the current box.
+
+        Shapes a box creates *directly* land in its ``own`` list; shapes produced
+        by nested ``_emit`` calls bubble up into the parent's ``all`` list. That
+        is what lets ``<li data-anim>`` animate the paragraph it produced while a
+        card animates only its own panel.
+        """
+        if not self._frames:
+            return element
+        try:
+            shape_id = element.shape_id
+        except (AttributeError, NotImplementedError):
+            return element
+        self._frames[-1]["own"].append(shape_id)
+        return element
 
     # -- shapes ----------------------------------------------------------
     def _rect(self, x, y, width, height, name, shape=MSO_SHAPE.RECTANGLE):
@@ -102,7 +202,7 @@ class SlideWriter:
         element.shadow.inherit = False
         element.name = name
         self.count += 1
-        return element
+        return self._track(element)
 
     def _rounded_shape(self, x, y, width, height, corners, name):
         """Build a rect with four independent elliptical corners.
@@ -342,6 +442,7 @@ class SlideWriter:
         )
         textbox.name = _name(box)
         self.count += 1
+        self._track(textbox)
         frame = textbox.text_frame
         # Wrapping off: the line breaks below are the ones the layout engine
         # computed, and they are what the author designed.
@@ -424,6 +525,7 @@ class SlideWriter:
             return
         picture.name = _name(box)
         self.count += 1
+        self._track(picture)
         self._crop(picture, box, path)
         radius = _radius(box.style)
         alpha = box.style.opacity
@@ -500,6 +602,7 @@ class SlideWriter:
             return
         picture.name = _name(box) or "icon"
         self.count += 1
+        self._track(picture)
         self._apply_rotation(picture, box.style)
 
     def _apply_rotation_group(self, box, count):
@@ -542,6 +645,7 @@ class SlideWriter:
         )
         shape.name = _name(box) or "table"
         self.count += 1
+        self._track(shape)
         table = shape.table
         _plain_table_style(table)
         for index, width in enumerate(widths):
@@ -639,6 +743,25 @@ def _detach_theme_style(shape):
     element = shape._element
     for style in element.findall(qn("p:style")):
         element.remove(style)
+
+
+def _collect(frame, claimed):
+    """Every shape a box produced, own shapes first, without duplicates."""
+    ordered = []
+    seen = set()
+    for shape_id in list(frame["own"]) + list(frame["all"]):
+        if shape_id in seen or shape_id in claimed:
+            continue
+        seen.add(shape_id)
+        ordered.append(shape_id)
+    return ordered
+
+
+def _stagger_steps(frame, stagger, claimed):
+    """Group a container's child shapes into one step per direct child."""
+    if not stagger or len(frame["kids"]) < 2:
+        return []
+    return [_collect(kid, claimed) for kid in frame["kids"]]
 
 
 def _corners_differ(corners):

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pptpress"
-version = "1.1.0"
+version = "1.2.0"
 description = "Author decks in HTML/CSS, export fully editable PPTX. Pure Python, offline, no browser."
 readme = "README.md"
 requires-python = ">=3.9"

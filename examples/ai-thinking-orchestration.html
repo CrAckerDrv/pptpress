@@ -82,13 +82,13 @@
 <body>
 
 <!-- 01 封面 -->
-<section class="slide dark">
+<section data-transition="fade" data-transition-speed="med" class="slide dark">
   <div class="kicker">AI Systems · 2026</div>
   <h1>现代 AI 的思考过程<br>与专家调度</h1>
   <p class="lead" style="width:660px">模型如何"想清楚再说"，系统如何把问题拆给对的专家。
     全篇用六张图回答：<b style="color:#F2F6FC">算力该花在哪，专家该叫几个。</b></p>
   <div class="rule" style="margin-top:24px"></div>
-  <div class="row" style="margin-top:16px;gap:52px">
+  <div class="row" style="margin-top:16px;gap:52px" data-anim="fade-up" data-anim-stagger="0.12">
     <div>
       <div class="label">Part 01</div>
       <div class="body" style="margin-top:4px">思考过程<br>范式 · 预算 · 验证 · 回溯</div>
@@ -119,8 +119,8 @@
 </section>
 
 <!-- 02 课程地图 -->
-<section class="slide">
-  <div class="head">
+<section data-transition="push-left" data-transition-speed="med" class="slide">
+  <div class="head" data-anim="fade-up" data-anim-delay="0.1">
     <div>
       <div class="kicker">Course map</div>
       <h2>四段式地图：从"想多久"到"叫谁"</h2>
@@ -129,7 +129,7 @@
   </div>
   <p class="lead" style="width:760px">前两段回答模型内部怎么想，后两段回答系统外部怎么分工，
     最后一页把两者合成为同一个判断。</p>
-  <div class="grid2" style="margin-top:20px">
+  <div class="grid2" style="margin-top:20px" data-anim="fade-up" data-anim-stagger="0.12">
     <div class="card top">
       <div class="row"><div class="num">1</div>
         <div><h3>思考的三种范式</h3><p class="small">直接回答 / 思维链 / 推理搜索——不是升级关系，是三档预算。</p></div>
@@ -183,19 +183,19 @@
 </section>
 
 <!-- 03 分隔 -->
-<section class="slide dark">
+<section data-transition="fade" data-transition-speed="med" class="slide dark">
   <div class="kicker">Part 01</div>
   <h2 style="font-size:40px;margin-top:10px">思考过程</h2>
   <p class="lead" style="width:860px">从"一次回答"到"想清楚再说"：模型内部多做了哪些事，
     这些事为什么有效，又为什么经常无效。</p>
   <div class="rule" style="margin-top:22px"></div>
-  <div class="row" style="margin-top:16px;gap:40px">
+  <div class="row" style="margin-top:16px;gap:40px" data-anim="fade-up" data-anim-stagger="0.12">
     <div><div class="label">P04</div><div class="body" style="margin-top:4px">三种范式：三档预算</div></div>
     <div><div class="label">P05</div><div class="body" style="margin-top:4px">预算曲线与拐点</div></div>
     <div><div class="label">P06</div><div class="body" style="margin-top:4px">思考的四个动作</div></div>
     <div><div class="label">P07</div><div class="body" style="margin-top:4px">验证器决定上限</div></div>
   </div>
-  <div class="grid2" style="margin-top:34px;gap:20px">
+  <div class="grid2" style="margin-top:34px;gap:20px" data-anim="zoom" data-anim-stagger="0.15">
     <div class="card dark">
       <h4 style="color:#F2F6FC">这一段要回答的三个问题</h4>
       <p class="small" style="margin-top:6px">① 同一个模型，为什么"多想一会儿"有时更准、有时没用？</p>
@@ -216,8 +216,8 @@
 </section>
 
 <!-- 04 三种范式 -->
-<section class="slide">
-  <div class="head">
+<section data-transition="fade" data-transition-speed="med" class="slide">
+  <div class="head" data-anim="fade-up" data-anim-delay="0.1">
     <div>
       <div class="kicker">01 · Three regimes</div>
       <h2>不是升级关系，是三档预算</h2>
@@ -225,7 +225,7 @@
     <div class="meta">同一模型<br>三种花法</div>
   </div>
   <p class="lead" style="width:800px">差别不在参数规模，而在<b>生成多少 token、验证多少次、允不允许回溯</b>。</p>
-  <div class="grid3" style="margin-top:18px">
+  <div class="grid3" style="margin-top:18px" data-anim="fade-up" data-anim-stagger="0.12">
     <div class="card top">
       <div class="label">Regime A</div>
       <h3 style="margin-top:6px">直接回答</h3>
@@ -275,15 +275,15 @@
 </section>
 
 <!-- 05 预算曲线 -->
-<section class="slide">
-  <div class="head">
+<section data-transition="push-left" data-transition-speed="med" class="slide">
+  <div class="head" data-anim="fade-up" data-anim-delay="0.1">
     <div>
       <div class="kicker">02 · Budget curve</div>
       <h2>算力加在哪里，决定曲线怎么弯</h2>
     </div>
     <div class="meta">示意图<br>量级参考公开研究</div>
   </div>
-  <div class="row" style="margin-top:14px;gap:18px">
+  <div class="row" style="margin-top:14px;gap:18px" data-anim="fade-up" data-anim-stagger="0.12">
     <div style="width:700px"><div class="chart"><!-- CHART_A_P05 -->
 <svg viewBox="0 0 600 403" fill="none" xmlns="http://www.w3.org/2000/svg">
 <line x1="58.0" y1="265.0" x2="582.0" y2="265.0" stroke="#EDF1F7" stroke-width="1.4"/>
@@ -350,15 +350,15 @@
 </section>
 
 <!-- 06 四个动作 -->
-<section class="slide">
-  <div class="head">
+<section data-transition="fade" data-transition-speed="med" class="slide">
+  <div class="head" data-anim="fade-up" data-anim-delay="0.1">
     <div>
       <div class="kicker">03 · Anatomy</div>
       <h2>思考的四个动作，缺一个就退化成猜</h2>
     </div>
     <div class="meta">循环<br>不是流水线</div>
   </div>
-  <div class="row" style="margin-top:20px;gap:10px;align-items:stretch">
+  <div class="row" style="margin-top:20px;gap:10px;align-items:stretch" data-anim="fade-up" data-anim-stagger="0.1">
     <div class="card top" style="flex:1">
       <div class="num">1</div>
       <h3 style="margin-top:8px">拆解</h3>
@@ -397,7 +397,7 @@
     </table>
   </div>
 
-  <div class="grid2" style="margin-top:14px">
+  <div class="grid2" style="margin-top:14px" data-anim="fade-up" data-anim-stagger="0.12">
     <div class="card soft">
       <h4>真正的增益来自"验证"</h4>
       <p class="body" style="margin-top:5px">验证器可以是单元测试、JSON Schema、检索比对、
@@ -417,15 +417,15 @@
 </section>
 
 <!-- 07 验证器对比 -->
-<section class="slide">
-  <div class="head">
+<section data-transition="fade" data-transition-speed="med" class="slide">
+  <div class="head" data-anim="fade-up" data-anim-delay="0.1">
     <div>
       <div class="kicker">04 · Verifier</div>
       <h2>有验证器与没验证器，是两条曲线</h2>
     </div>
     <div class="meta">示意图<br>同一模型同一题集</div>
   </div>
-  <div class="row" style="margin-top:14px;gap:18px">
+  <div class="row" style="margin-top:14px;gap:18px" data-anim="fade-up" data-anim-stagger="0.12">
     <div style="width:700px"><div class="chart"><!-- CHART_B_P07 -->
 <svg viewBox="0 0 600 403" fill="none" xmlns="http://www.w3.org/2000/svg">
 <line x1="58.0" y1="265.0" x2="582.0" y2="265.0" stroke="#EDF1F7" stroke-width="1.4"/>
@@ -488,8 +488,8 @@
 </section>
 
 <!-- 08 判断卡 -->
-<section class="slide">
-  <div class="head">
+<section data-transition="fade" data-transition-speed="med" class="slide">
+  <div class="head" data-anim="fade-up" data-anim-delay="0.1">
     <div>
       <div class="kicker">05 · Decision card</div>
       <h2>什么时候值得让 AI 多想一会儿</h2>
@@ -547,19 +547,19 @@
 </section>
 
 <!-- 09 分隔 -->
-<section class="slide dark">
+<section data-transition="push-left" data-transition-speed="med" class="slide dark">
   <div class="kicker">Part 02</div>
   <h2 style="font-size:40px;margin-top:10px">专家调度</h2>
   <p class="lead" style="width:640px">当一个模型做不好，就把"谁来做"变成可计算的决策：
     门控、路由、汇总与仲裁。</p>
   <div class="rule" style="margin-top:22px"></div>
-  <div class="row" style="margin-top:16px;gap:40px">
+  <div class="row" style="margin-top:16px;gap:40px" data-anim="fade-up" data-anim-stagger="0.12">
     <div><div class="label">P10</div><div class="body" style="margin-top:4px">稀疏专家与门控权重</div></div>
     <div><div class="label">P11</div><div class="body" style="margin-top:4px">编排与延迟预算</div></div>
     <div><div class="label">P12</div><div class="body" style="margin-top:4px">四种策略的代价曲线</div></div>
     <div><div class="label">P13</div><div class="body" style="margin-top:4px">错误如何沿链路累积</div></div>
   </div>
-  <div class="grid2" style="margin-top:34px;gap:20px">
+  <div class="grid2" style="margin-top:34px;gap:20px" data-anim="zoom" data-anim-stagger="0.15">
     <div class="card dark">
       <h4 style="color:#F2F6FC">两种"专家"，别混为一谈</h4>
       <p class="small" style="margin-top:6px"><b style="color:#5EEAD4">模型内部</b>：训练出的子网络，
@@ -580,8 +580,8 @@
 </section>
 
 <!-- 10 稀疏专家 -->
-<section class="slide">
-  <div class="head">
+<section data-transition="fade" data-transition-speed="med" class="slide">
+  <div class="head" data-anim="fade-up" data-anim-delay="0.1">
     <div>
       <div class="kicker">06 · Sparse experts</div>
       <h2>参数量涨十倍，计算量只涨一点</h2>
@@ -648,8 +648,8 @@
 </section>
 
 <!-- 11 编排与延迟预算 -->
-<section class="slide">
-  <div class="head">
+<section data-transition="fade" data-transition-speed="med" class="slide">
+  <div class="head" data-anim="fade-up" data-anim-delay="0.1">
     <div>
       <div class="kicker">07 · Orchestration</div>
       <h2>并行不加延迟，串行吃满预算</h2>
@@ -658,7 +658,7 @@
   </div>
   <p class="lead" style="width:780px">路由器先判意图，专家并行执行，最后串行汇总与校验。
     <b>加专家只增加成本；延迟卡在串行段。</b></p>
-  <div class="row" style="margin-top:14px;gap:18px">
+  <div class="row" style="margin-top:14px;gap:18px" data-anim="fade-up" data-anim-stagger="0.12">
     <div style="width:680px"><div class="chart"><!-- CHART_C_P11 -->
 <svg viewBox="0 0 600 335" fill="none" xmlns="http://www.w3.org/2000/svg">
 <line x1="46.0" y1="40" x2="46.0" y2="176" stroke="#94A3B5" stroke-width="1.4"/>
@@ -711,15 +711,15 @@
 </section>
 
 <!-- 12 策略散点 -->
-<section class="slide">
-  <div class="head">
+<section data-transition="fade" data-transition-speed="med" class="slide">
+  <div class="head" data-anim="fade-up" data-anim-delay="0.1">
     <div>
       <div class="kicker">08 · Policies</div>
       <h2>四种调度策略，落在同一张代价图上</h2>
     </div>
     <div class="meta">横轴延迟<br>纵轴单次成本</div>
   </div>
-  <div class="row" style="margin-top:14px;gap:18px">
+  <div class="row" style="margin-top:14px;gap:18px" data-anim="fade-up" data-anim-stagger="0.12">
     <div style="width:680px"><div class="chart"><!-- CHART_D_P12 -->
 <svg viewBox="0 0 600 415" fill="none" xmlns="http://www.w3.org/2000/svg">
 <line x1="66.0" y1="296.7" x2="566.0" y2="296.7" stroke="#EDF1F7" stroke-width="1.4"/>
@@ -798,8 +798,8 @@
 </section>
 
 <!-- 13 错误累积 -->
-<section class="slide">
-  <div class="head">
+<section data-transition="push-left" data-transition-speed="med" class="slide">
+  <div class="head" data-anim="fade-up" data-anim-delay="0.1">
     <div>
       <div class="kicker">09 · Failure modes</div>
       <h2>错误沿链路累积，比想象得快</h2>
@@ -879,8 +879,8 @@
 </section>
 
 <!-- 14 策略对照表 -->
-<section class="slide">
-  <div class="head">
+<section data-transition="fade" data-transition-speed="med" class="slide">
+  <div class="head" data-anim="fade-up" data-anim-delay="0.1">
     <div>
       <div class="kicker">10 · Compare</div>
       <h2>四种策略：谁决定、代价、风险</h2>
@@ -937,7 +937,7 @@
 </section>
 
 <!-- 15 统一视角 -->
-<section class="slide dark">
+<section data-transition="fade" data-transition-speed="med" class="slide dark">
   <div class="kicker">11 · One thing</div>
   <h2 style="font-size:31px;margin-top:10px">想得久，是内部调度变密集；<br>叫得多，是外部思考变分散</h2>
   <div class="rule" style="margin-top:20px"></div>
@@ -981,8 +981,8 @@
 </section>
 
 <!-- 16 练习与总结 -->
-<section class="slide">
-  <div class="head">
+<section data-transition="fade" data-transition-speed="med" class="slide">
+  <div class="head" data-anim="fade-up" data-anim-delay="0.1">
     <div>
       <div class="kicker">12 · Practice &amp; recap</div>
       <h2>三个练习，四句总结</h2>

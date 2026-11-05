@@ -58,10 +58,11 @@ PPT Press build -> deck.pptx
 | `display:grid` / `flex` | 轨道与伸缩计算 | 精确坐标 |
 | `<table>` | 单元格与合并 | 原生表格 |
 | 内联 `<svg>` | 图元 → 自定义几何 | 矢量形状（可改色） |
+| `data-anim` / `data-transition` | 动效声明 | 原生动画与转场（可调） |
 | `<aside class="notes">` | 备注 | 演讲者备注 |
 
 **关键性质**：构建产物里没有一个整页位图。打开 PowerPoint 后，任意文字都能双击改，
-任意色块都能改色，表格能直接填数，图标能拆开重排。
+任意色块都能改色，表格能直接填数，图标能拆开重排，动效能进动画窗格逐条调。
 
 ---
 
@@ -184,16 +185,19 @@ preview_file("deck.html", "preview/")   # 每页一个 SVG
 
 | HTML / CSS | PowerPoint 对象 | 可编辑 |
 |---|---|---|
-| `div` / `section` 画了背景 | 自选形状（矩形/圆角） | 改色、改圆角、改边框 |
+| `div` / `section` 画了背景 | 自选形状（矩形/圆角/自定义路径） | 改色、改圆角、改边框 |
 | `h1`…`h6` / `p` / `li` | 文本框，**一行一段落** | 改文字、字体、字号、颜色 |
-| `<b> <i> <span style>` | 段落内的运行 | 独立改字 |
-| `ul` / `ol` | 原生项目符号（`buChar`） | 改符号样式 |
+| `<b> <i> <u> <s> <sub> <sup>` | 段落内的运行 | 独立改字 |
+| `ul` / `ol` | 原生符号（`buChar`）/ 原生编号（`buAutoNum`） | 改符号、改编号方案 |
 | `<img>` | 图片 + `object-fit` 裁切 | 替换、裁切、改色 |
 | 内联 `<svg>` | **原生自定义几何形状** | 选中、改色、缩放不糊 |
 | `<table>` | 原生表格（含合并单元格） | 直接在单元格里输入 |
 | `box-shadow` | 原生外阴影 | 改模糊/偏移/颜色 |
+| `text-shadow` | 运行级原生阴影 | 改模糊/偏移/颜色 |
 | `linear-gradient` | 原生渐变填充 | 改色标 |
-| `transform: rotate()` | 形状旋转 | 改角度 |
+| `border-radius`（四角/椭圆） | 自定义几何路径 | 选中后可改 |
+| `transform: rotate()` / `translate()` | 形状旋转 / 位移 | 改角度、改位置 |
+| `data-anim` / `data-transition` | **原生动画 / 转场**（`p:timing`） | 动画窗格里改时长、换效果、删条目 |
 | `<aside class="notes">` | 演讲者备注 | 编辑备注 |
 
 ---
@@ -204,10 +208,20 @@ preview_file("deck.html", "preview/")   # 每页一个 SVG
 
 | 示例 | 气质 | 页数 | 对象数 | 构建耗时 |
 |---|---|---|---|---|
-| [`ai-thinking-orchestration`](examples/ai-thinking-orchestration.html) | 浅色课件 + 6 张内联 SVG 图表 | 16 | 812 | ~545 ms |
-| [`aurora-launch`](examples/aurora-launch.html) | 深色发布会 | 6 | 195 | ~100 ms |
-| [`annual-review`](examples/annual-review.html) | 纸感经营复盘（原生表格） | 4 | 119 | ~85 ms |
-| [`editorial-keynote`](examples/editorial-keynote.html) | 出版感主题演讲 | 4 | 86 | ~70 ms |
+| [`ai-thinking-orchestration`](examples/ai-thinking-orchestration.html) | 浅色课件 + 6 张内联 SVG 图表 | 16 | 812 | ~680 ms |
+| [`aurora-launch`](examples/aurora-launch.html) | 深色发布会 | 6 | 195 | ~120 ms |
+| [`annual-review`](examples/annual-review.html) | 纸感经营复盘（原生表格） | 4 | 119 | ~96 ms |
+| [`editorial-keynote`](examples/editorial-keynote.html) | 出版感主题演讲 | 4 | 86 | ~66 ms |
+
+四份示例都带原生动效（转场 + 卡片逐个出现），总效应数与点击次数可用
+`check_deck.py` 查：
+
+| 示例 | 转场 | 有动效的页 | 动效形状 | 点击次数 |
+|---|---|---|---|---|
+| 图表课件 | 16 | 15 | 249 | 13 |
+| 深色发布 | 6 | 4 | 57 | 4 |
+| 纸感复盘 | 4 | 2 | 18 | 6 |
+| 出版演讲 | 4 | 1 | 1 | 0 |
 
 ![预算曲线页：三条曲线都是原生形状与文本框](examples/shots/courseware-05.png)
 
@@ -239,6 +253,12 @@ python tools/bench.py                          # 批量构建 + 计时
 | 文字对比度 | 正文 ≥ 4.5:1，标题 ≥ 3:1 | `~` 提示 |
 | 出血 | 形状越过页面边界 | `~` 提示（有意设计） |
 
+有动效时，末尾会多一行统计（每页明细见 `--json`）：
+
+```
+  motion: 16 transitions, 15 animated slides, 249 effects, 13 clicks
+```
+
 ---
 
 ## 文档
@@ -247,6 +267,7 @@ python tools/bench.py                          # 批量构建 + 计时
 |---|---|
 | [`SKILL.md`](SKILL.md) | 工作流、三道闸门、质量清单、失败修复表（给执行者看的规程） |
 | [`docs/authoring-guide.md`](docs/authoring-guide.md) | HTML/CSS 写法、元素映射表、配方片段 |
+| [`docs/motion.md`](docs/motion.md) | 转场与动画：全部属性、点击节奏、逐个出现、限制 |
 | [`docs/pattern-library.md`](docs/pattern-library.md) | 5 套气质配方 × 12 种页面骨架 |
 | [`docs/architecture.md`](docs/architecture.md) | 引擎分层、数据结构、坐标系统、扩展点 |
 | [`docs/roadmap.md`](docs/roadmap.md) | 技术路线图与优先级 |
@@ -260,11 +281,18 @@ python tools/bench.py                          # 批量构建 + 计时
 ## 支持范围
 
 **排版**：块级流、Flexbox（方向/换行/间隙/伸缩/对齐）、CSS Grid
-（`repeat()`、`fr`、`auto`、混合轨道）、绝对定位与出血、内联行换行、
+（`repeat()`、`fr`、`auto`、`minmax()`、`auto-fit`、混合轨道、`span N`、
+显式定位、`align-content`）、绝对定位与出血、内联行换行、
 原生表格（合并单元格、逐格边框）。
 
-**视觉**：纯色/渐变/图片背景、圆角、分边边框、外阴影、透明度、旋转、
-`object-fit`、字距/行高/大写/下划线。
+**视觉**：纯色/渐变/图片背景、四角/椭圆圆角、分边边框（含虚线）、外阴影、
+透明度、旋转与位移、`object-fit`、字距/行高/大写/下划线/删除线、
+`sub`/`sup`、文本阴影。
+
+**动效**：原生 PowerPoint 转场与动画。`data-transition`（`fade`/`push-left`/
+`wipe`/`cut`…）+ `data-anim`（18 种进入/退出/强调效果）+ `data-anim-stagger`
+让一组件逐个出现。写出的就是动画窗格里那棵 `p:timing` 树，交付后仍可逐条调。
+详见 [`docs/motion.md`](docs/motion.md)。
 
 **画布**：`data-size` 支持 `16:9`、`4:3`、`1:1`、`9:16`、`3:2`、`16:10`、`A4`、
 以及任意 `WxH`。
@@ -283,7 +311,7 @@ python tools/bench.py                          # 批量构建 + 计时
 | `risograph` | 高饱和印刷感 |
 
 **不支持（有意为之）**：`float`、`columns`、`filter`、`clip-path`、`@keyframes`、
-文本级 `transform`、媒体查询。它们无法映射到可编辑的 PowerPoint 对象，
+文本级 `transform`、媒体查询、路径动画。它们无法映射到可编辑的 PowerPoint 对象，
 硬做只能退化成图片——那正是本项目要避免的结果。
 
 ---
@@ -307,10 +335,10 @@ python tools/bench.py                          # 批量构建 + 计时
 
 | 示例 | 页数 | 对象数 | 耗时 | 产物 |
 |---|---|---|---|---|
-| 16 页图表课件 | 16 | 812 | **556 ms** | 103 KB |
-| 6 页深色演示 | 6 | 195 | **107 ms** | 40 KB |
-| 4 页纸感复盘 | 4 | 119 | **87 ms** | 36 KB |
-| 4 页出版感演讲 | 4 | 86 | **63 ms** | 34 KB |
+| 16 页图表课件 | 16 | 812 | **680 ms** | 119 KB |
+| 6 页深色演示 | 6 | 195 | **120 ms** | 44 KB |
+| 4 页纸感复盘 | 4 | 119 | **96 ms** | 37 KB |
+| 4 页出版感演讲 | 4 | 86 | **66 ms** | 34 KB |
 
 **产物构成**（16 页课件）
 
@@ -326,7 +354,7 @@ python tools/bench.py                          # 批量构建 + 计时
 **校验**
 
 ```bash
-python -m pytest tests -q                       # 43 passed
+python -m pytest tests -q                       # 94 passed
 python tools/check_deck.py examples/*.pptx --strict   # 4 份示例 0 错误 0 警告
 ```
 
@@ -352,7 +380,7 @@ pptpress/
 │  ├─ preview*.py         SVG / HTML 预览
 │  └─ pipeline.py  cli.py  slides.py  util.py  env.py
 ├─ tools/                 交付校验与基准
-├─ tests/                 引擎与回归测试（43 项）
+├─ tests/                 引擎、缺口与动效测试（94 项）
 ├─ examples/              4 份示例 + 构建产物 + 图表生成脚本 + 截图
 └─ docs/                  写作指南、配方库、架构、路线图、实测数据
 ```

@@ -18,7 +18,7 @@ python -m pptpress build examples/ai-thinking-orchestration.html -o deck.pptx
 PPT Press build -> deck.pptx
   slides : 16
   objects: 812
-  time   : 556 ms parse=4ms css=3ms layout=118ms pptx=430ms
+  time   : 680 ms parse=5ms css=4ms layout=120ms pptx=520ms
 ```
 
 ![Courseware cover](examples/shots/courseware-01.png)
@@ -191,10 +191,10 @@ editability claims yourself.
 
 | Example | Mood | Pages | Objects | Build |
 |---|---|---|---|---|
-| [`ai-thinking-orchestration`](examples/ai-thinking-orchestration.html) | light courseware + 6 inline-SVG charts | 16 | 812 | ~556 ms |
-| [`aurora-launch`](examples/aurora-launch.html) | dark product launch | 6 | 195 | ~107 ms |
-| [`annual-review`](examples/annual-review.html) | paper-toned business review (native tables) | 4 | 119 | ~87 ms |
-| [`editorial-keynote`](examples/editorial-keynote.html) | editorial serif keynote | 4 | 86 | ~63 ms |
+| [`ai-thinking-orchestration`](examples/ai-thinking-orchestration.html) | light courseware + 6 inline-SVG charts | 16 | 812 | ~680 ms |
+| [`aurora-launch`](examples/aurora-launch.html) | dark product launch | 6 | 195 | ~120 ms |
+| [`annual-review`](examples/annual-review.html) | paper-toned business review (native tables) | 4 | 119 | ~96 ms |
+| [`editorial-keynote`](examples/editorial-keynote.html) | editorial serif keynote | 4 | 86 | ~66 ms |
 
 ![Budget-curve page: three curves are native shapes and text boxes](examples/shots/courseware-05.png)
 
@@ -301,10 +301,10 @@ commands are in [`docs/benchmarks.md`](docs/benchmarks.md).
 
 | Example | Pages | Objects | Time | Output |
 |---|---|---|---|---|
-| 16-page chart courseware | 16 | 812 | **556 ms** | 103 KB |
-| 6-page dark launch | 6 | 195 | **107 ms** | 40 KB |
-| 4-page paper review | 4 | 119 | **87 ms** | 36 KB |
-| 4-page editorial keynote | 4 | 86 | **63 ms** | 34 KB |
+| 16-page chart courseware | 16 | 812 | **680 ms** | 119 KB |
+| 6-page dark launch | 6 | 195 | **120 ms** | 44 KB |
+| 4-page paper review | 4 | 119 | **96 ms** | 37 KB |
+| 4-page editorial keynote | 4 | 86 | **66 ms** | 34 KB |
 
 **Output composition** (16-page deck)
 
@@ -320,7 +320,7 @@ commands are in [`docs/benchmarks.md`](docs/benchmarks.md).
 **Validation**
 
 ```bash
-python -m pytest tests -q                            # 43 passed
+python -m pytest tests -q                            # 94 passed
 python tools/check_deck.py examples/*.pptx --strict  # 4 examples, 0 errors 0 warnings
 ```
 
@@ -344,7 +344,7 @@ pptpress/
 │  ├─ preview*.py       SVG / HTML preview
 │  └─ pipeline.py  cli.py  slides.py  util.py  env.py
 ├─ tools/               delivery checks and benchmarks
-├─ tests/               43 engine and regression tests
+├─ tests/               94 engine, gap and motion tests
 ├─ examples/            4 examples + built decks + chart generator + screenshots
 └─ docs/                authoring guide, pattern library, architecture, roadmap,
                         benchmarks, known gaps

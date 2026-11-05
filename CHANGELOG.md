@@ -10,6 +10,65 @@
 
 ---
 
+## [1.2.0] — 2026-11-05
+
+动效进入主线：**用 HTML 声明，写成 PowerPoint 原生动画**。没有 GIF、没有视频、
+没有渲染管线——写出的就是动画窗格里那棵 `p:timing` 树，交付后可以逐条改时长、
+换效果、删条目。
+
+### Added — 原生转场
+
+```html
+<section class="slide" data-transition="push-left" data-transition-speed="med">
+```
+
+`fade` / `push` / `push-left` / `wipe` / `wipe-left` / `cover` / `split` / `cut`，
+写出 `p:transition` 并按 schema 排在 `p:timing` 之前（顺序错了 PowerPoint 会报"需要修复"）。
+
+### Added — 原生元素动画
+
+```html
+<div class="card" data-anim="fade-up" data-anim-delay="0.2" data-anim-dur="0.6">…</div>
+```
+
+18 种效果：进入（`fade`、`fade-up/down/left/right`、`fly-*`、`zoom`、`wipe*`）、
+退出（`fade-out`、`fly-out`、`zoom-out`）、强调（`pulse`、`spin`）。
+写出 `p:set`（可见性）、`p:animEffect`（淡入/擦除）、`p:anim`（相对位移公式
+`#ppt_x-0.35`）、`p:animRot`（旋转），与 PowerPoint 自身生成的结构一致。
+
+### Added — 点击节奏与逐个出现
+
+| 属性 | 作用 |
+|---|---|
+| `data-anim-trigger="click"` | 每次点击出一个（默认） |
+| `data-anim-trigger="with"` | 跟随上一组同时出现 |
+| `data-anim-trigger="after"` | 上一组播完自动接上（`evt="onEnd"`） |
+| `data-anim-stagger="0.12"` | 一次点击，子元素每隔 0.12s 依次出现 |
+
+`data-anim-stagger` 是最常用的写法：一组卡片一行属性，演示者只按一次键。
+
+### Added — 语义与工具
+
+* **动画粒度按"视觉单元"**：卡片动画包含面板与其中所有文字；`<li>` 动画该条列表项；
+  `<svg>` 动画它拆出的全部矢量形状。
+* `tools/check_deck.py` 统计动效：`motion: 16 transitions, 15 animated slides,
+  249 effects, 13 clicks`，`--json` 提供每页明细。
+* 新增 [`docs/motion.md`](docs/motion.md)：全部属性、点击节奏、逐个出现、限制。
+* 四份示例都带上动效声明：图表课件 16 次转场 / 249 个动效形状 / 13 次点击，
+  深色发布 57 个，纸感复盘 18 个，出版演讲 1 个（克制到只有标题淡入）。
+
+### Changed
+
+* `tests/test_animate.py`：51 条用例，覆盖每种转场、每种效果、三种点击节奏、
+  逐个出现与混合 deck（动效不能漏到不该动的页上）。测试总数 43 → **94**。
+
+### Unchanged
+
+* 没有动效声明的幻灯片不生成 `p:timing`，文件大小不变。
+* 动效不引入任何浏览器、渲染进程或网络调用。
+
+---
+
 ## [1.1.0] — 2026-11-05
 
 以"实测缺口"驱动的一次修复版本：先写探针确认每条缺口真的存在，再修，再把每条转成回归用例。

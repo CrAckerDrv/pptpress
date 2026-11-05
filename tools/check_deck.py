@@ -169,6 +169,32 @@ def _slide_background(slide):
     return (255, 255, 255, 1.0)
 
 
+def _motion(slide):
+    """Count the slide's transition and animation effects.
+
+    Motion is a delivery feature, not decoration: a deck that is supposed to
+    cascade but arrives without a ``p:timing`` tree looks broken in the room, and
+    nobody notices until the talk is live. Reporting it here makes that visible.
+    """
+    element = slide._element
+    transition = element.find(qn("p:transition"))
+    timing = element.find(qn("p:timing"))
+    effects = 0
+    clicks = 0
+    if timing is not None:
+        for ctn in timing.iter(qn("p:cTn")):
+            if ctn.get("presetClass"):
+                effects += 1
+        for cond in timing.iter(qn("p:cond")):
+            if cond.get("delay") == "indefinite":
+                clicks += 1
+    return {
+        "transition": transition is not None,
+        "effects": effects,
+        "clicks": clicks,
+    }
+
+
 def check(path):
     presentation = Presentation(path)
     width = presentation.slide_width
@@ -179,6 +205,7 @@ def check(path):
         surfaces = _surfaces(slide, background)
         shapes = _slide_shapes(slide)
         slide_report = {"index": index, "shapes": len(shapes), "pictures": 0, "text_boxes": 0}
+        slide_report.update(_motion(slide))
         picture_area = 0
         for shape in shapes:
             if shape.shape_type == 13:
@@ -231,6 +258,12 @@ def check(path):
         report["slides"].append(slide_report)
     report["issues"] = report["errors"]
     report["ok"] = not report["errors"]
+    report["motion"] = {
+        "slides_with_transition": sum(1 for s in report["slides"] if s["transition"]),
+        "animated_slides": sum(1 for s in report["slides"] if s["effects"]),
+        "effects": sum(s["effects"] for s in report["slides"]),
+        "clicks": sum(s["clicks"] for s in report["slides"]),
+    }
     return report
 
 
@@ -255,6 +288,13 @@ def main(argv=None):
             print(f"  ! {issue}")
         for issue in report["warnings"]:
             print(f"  ~ {issue}")
+        motion = report["motion"]
+        if motion["slides_with_transition"] or motion["effects"]:
+            print(
+                f"  motion: {motion['slides_with_transition']} transitions, "
+                f"{motion['animated_slides']} animated slides, "
+                f"{motion['effects']} effects, {motion['clicks']} clicks"
+            )
     ok = report["ok"] and not (args.strict and report["warnings"])
     return 0 if ok else 1
 

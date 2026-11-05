@@ -9,7 +9,7 @@ description: >
   courseware; wants a web-page-style deck delivered as PowerPoint; or mentions
   pptpress, HTML→PPTX, or "editable slides".
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   license: "MIT"
   entrypoint: "python -m pptpress build <deck.html> -o <deck.pptx>"
 ---
@@ -112,25 +112,42 @@ table / timeline / bars / quote / defs / section / closing）。
 
 * 一页一个观点；需要三栏说明这其实是三页。
 * 标题用 `<br>` 主动断行——PPTX 不会重新折行，你看到的断点就是交付的断点。
-* **字号与字重必须显式写**：`h1{font-size:52px;font-weight:700}`、
-  `b{font-weight:700}`、`i{font-style:italic}`。语义标签的默认样式目前不生效，
-  裸写 `<h1>` 会退化成 12pt 正文（见 [`docs/known-gaps.md`](docs/known-gaps.md)）。
+* 字号与字重**显式写出来**：`h1{font-size:52px;font-weight:700}`。语义标签的默认
+  样式已内置（`h1`=32pt/700、`<b>` 加粗、`<i>` 斜体），但你的版面尺寸要自己定。
 * 字号阶梯：标题 40–88px，正文 13–20px，标注 10–12px；正文不小于 12px。
-* 强调只用 `<b>` / `<i>` / 一个强调色，不要三种一起上；用 `<b>` 时配一条
-  `b{font-weight:700}`。
-* SVG 标签名保持真实大小写（`linearGradient`、`viewBox`），否则会被 HTML 解析器小写化。
+* **动效写在 HTML 上**，不要放到 PPT 里手工补：
+
+  ```html
+  <section class="slide" data-transition="fade">
+    <div class="grid2" data-anim="fade-up" data-anim-stagger="0.12"> … </div>
+  </section>
+  ```
+
+  章节封面用 `push-left`，内容页用 `fade`，卡片组用 `data-anim-stagger` 让它们
+  在一次点击里逐个出现。完整取值见 [`docs/motion.md`](docs/motion.md)。
+* 强调只用 `<b>` / `<i>` / 一个强调色，不要三种一起上。
+* SVG 标签名保持真实大小写（`linearGradient`、`viewBox`）——解析器会还原大小写，
+  但按原样写更易读，也能被别的工具正确处理。
 * 每个 `font-family` 都写真实回退：`'Inter','Segoe UI','Microsoft YaHei',sans-serif`。
 
 ### Step 5 · 构建 + 校验
 
 ```powershell
 python -m pptpress build deck.html -o deck.pptx
-python tools/check_deck.py deck.pptx          # 对比度 / 出血 / 可编辑性
+python tools/check_deck.py deck.pptx          # 对比度 / 出血 / 可编辑性 / 动效统计
 python tools/render_pptx.py deck.pptx shots   # 需要逐页看图时
 ```
 
 构建报告会列出：页数、对象数、耗时，以及每条 **内容溢出** 警告（含页码）。
 溢出必须回 Step 4 改文案或改 CSS，**不允许**靠缩小字号藏进去。
+
+`check_deck.py` 末尾会有一行动效统计：
+
+```
+  motion: 16 transitions, 15 animated slides, 249 effects, 13 clicks
+```
+
+`clicks` 是演示者要按的次数——太多说明节奏被打散，回去合并 `data-anim-trigger="with"`。
 
 > ⛔ **Gate 3**：把 `check_deck.py` 的 `!`（错误）清零；`~`（提示）可保留，
 > 但要在交付说明里写一句为什么（例如页脚对比度是设计选择）。
@@ -159,6 +176,7 @@ python tools/render_pptx.py deck.pptx shots   # 需要逐页看图时
 | 8 | 字号下限 | 正文 ≥ 12px、标注 ≥ 10px（投影可读） |
 | 9 | 对比度 | 正文对背景 ≥ 4.5:1；标题 ≥ 3:1；页脚允许更低但须是有意为之 |
 | 10 | 备注 | `<aside>` 覆盖每页要点，供演讲者视图使用 |
+| 11 | 动效可改 | 动效来自 HTML 属性，PowerPoint 动画窗格里能逐条改时长、换效果 |
 
 ---
 
@@ -186,6 +204,9 @@ python tools/render_pptx.py deck.pptx shots   # 需要逐页看图时
 | 形状颜色不对 | 主题 | 检查是否被 `lineRef/fillRef` 继承，构建器已剥离 `p:style` |
 | 表格行高不对 | 表格 | 减少单元格内文字，或给 `th/td` 显式 `padding` |
 | 旋转元素错位 | 变换 | 只对形状使用 `transform: rotate()`，不要对文本运行使用 |
+| 动效没出现 | 动效 | 确认属性在**有形状输出的元素**上；`data-anim` 写错名字会被静默忽略 |
+| 一次点击出太多 | 动效 | 检查是否漏了 `data-anim-stagger`；或把子项改成 `"with"` 合并 |
+| 卡片动了、文字没动 | 动效 | 不要给 `data-anim` 元素加 `overflow:hidden` 之类的包装层，直接标在卡片上 |
 
 ---
 
@@ -196,8 +217,9 @@ python -m pptpress build   deck.html -o deck.pptx        # 构建
 python -m pptpress build   deck.html -o deck.pptx --json # 机器可读报告
 python -m pptpress preview deck.html -o preview/         # SVG/HTML 版面预览
 python -m pptpress check   deck.html                     # 只校验，不留文件
-python -m pptpress themes                              # 内置主题
-python -m pytest tests -q                                # 引擎自测
-python tools/check_deck.py deck.pptx                     # 交付校验
+python -m pptpress themes                                # 内置主题
+python -m pptpress --version                             # 版本
+python -m pytest tests -q                                # 引擎与回归测试
+python tools/check_deck.py deck.pptx                     # 交付校验（含动效统计）
 python tools/render_pptx.py deck.pptx shots              # 逐页 PNG（需 LibreOffice）
 ```

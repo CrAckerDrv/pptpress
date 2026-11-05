@@ -12,7 +12,7 @@ preview_file(html_path, out_dir, theme=None)  -> PreviewResult
 
 from __future__ import annotations
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 __all__ = ["build_file", "preview_file", "__version__"]
 
 

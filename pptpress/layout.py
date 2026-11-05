@@ -834,6 +834,7 @@ class SlideBox:
         self.index = 0
         self.style = None
         self.meta = {}
+        self.node = None      # the <section> this slide came from
 
     def walk(self):
         for child in self.children:
@@ -876,6 +877,7 @@ class LayoutEngine:
     def layout_slide(self, node, index):
         slide = SlideBox(self.slide_width, self.slide_height)
         slide.index = index
+        slide.node = node
         context = {"content_width": self.slide_width, "content_height": self.slide_height}
         style = build_style(node, self.resolver, context)
         slide.style = style
